@@ -6,7 +6,7 @@ A set of commonly-used utilities by QuingKhaos for creating Factorio mods.
 
 ## Usage
 
-Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads) unzip it and put it in your mods directory. You can access libraries provided by khaoslib with `require("__khaoslib__.libname")`.
+Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads) or [GitHub releases](https://github.com/QuingKhaos/khaoslib/releases), unzip it and put it in your mods directory. You can access libraries provided by khaoslib with `require("__khaoslib__.libname")`.
 
 Add the khaoslib directory to your language server's library. I recommend installing the [Factorio modding toolkit](https://github.com/justarandomgeek/vscode-factoriomod-debug) and setting it up with the [Sumneko Lua language server](https://github.com/sumneko/lua-language-server) to get cross-mod autocomplete and type checking.
 

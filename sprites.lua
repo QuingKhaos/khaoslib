@@ -54,6 +54,7 @@ function khaoslib_sprites.tint(sprites, tint)
   elseif _sprites.layers then
     copy.layers = khaoslib_sprites.tint(_sprites.layers, tint)
   elseif _sprites.filename then
+    copy = table.deepcopy(_sprites)
     copy.tint = table.deepcopy(tint)
   else
     for _, sprite in pairs(_sprites) do

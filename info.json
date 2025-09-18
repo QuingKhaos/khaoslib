@@ -1,0 +1,12 @@
+{
+  "name": "###NAME###",
+  "title": "###TITLE###",
+  "description": "###DESCRIPTION###",
+  "author": "QuingKhaos",
+  "homepage": "",
+  "version": "1.0.0",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "base >= 2.0.0"
+  ]
+}

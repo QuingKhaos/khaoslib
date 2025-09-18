@@ -30,7 +30,7 @@ function khaoslib_sprites.replace(sprites, replacements)
   if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 2) end
   if type(replacements) ~= "table" then error("replacements parameter: Expected table, got " .. type(replacements), 2) end
 
-  for k, v in ipairs(replacements) do
+  for k, v in pairs(replacements) do
     if type(k) ~= "string" then error("replacements key: Expected string, got " .. type(k), 2) end
     if type(v) ~= "string" then error("replacements value: Expected string, got " .. type(v), 2) end
   end

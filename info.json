@@ -1,10 +1,10 @@
 {
-  "name": "###NAME###",
-  "title": "###TITLE###",
-  "description": "###DESCRIPTION###",
+  "name": "khaoslib",
+  "title": "QuingKhaos' Factorio Library",
+  "description": "A set of commonly-used utilities by QuingKhaos for creating Factorio mods.",
   "author": "QuingKhaos",
   "homepage": "",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "factorio_version": "2.0",
   "dependencies": [
     "base >= 2.0.0"

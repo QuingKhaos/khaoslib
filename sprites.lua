@@ -25,14 +25,22 @@ local khaoslib_sprites = {}
 --- @param tint data.Color
 --- @return T
 function khaoslib_sprites.tint(sprites, tint)
-  local copy = table.deepcopy(sprites)
+  if type(sprites) ~= "table" then error("Expected table, got " .. type(sprites), 2) end
+  if type(tint) ~= "table" then error("Expected table, got " .. type(tint), 2) end
+
+  -- local variable purely for intellisense support, because it doesn't infere the types correctly from the generic
+  local _sprites = sprites
+  ---@cast _sprites khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
+
+  -- make a shallow copy of the table to not modify the original one
+  local copy = {}
   ---@cast copy khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 
-  if copy.sheets then
-    copy.sheets = khaoslib_sprites.tint(copy.sheets, tint)
-  elseif copy.sheet then
-    copy.sheet = khaoslib_sprites.tint(copy.sheet, tint)
-  elseif copy.north then
+  if _sprites.sheets then
+    copy.sheets = khaoslib_sprites.tint(_sprites.sheets, tint)
+  elseif _sprites.sheet then
+    copy.sheet = khaoslib_sprites.tint(_sprites.sheet, tint)
+  elseif _sprites.north then
     local directions = {
       "north", "north_north_east", "north_east", "east_north_east",
       "east", "east_south_east", "south_east", "south_south_east",
@@ -41,20 +49,16 @@ function khaoslib_sprites.tint(sprites, tint)
     }
 
     for _, direction in ipairs(directions) do
-      if copy[direction] then copy[direction] = khaoslib_sprites.tint(copy[direction], tint) end
+      if _sprites[direction] then copy[direction] = khaoslib_sprites.tint(_sprites[direction], tint) end
     end
-  elseif copy.layers then
-    copy.layers = khaoslib_sprites.tint(copy.layers, tint)
-  elseif copy.filename then
+  elseif _sprites.layers then
+    copy.layers = khaoslib_sprites.tint(_sprites.layers, tint)
+  elseif _sprites.filename then
     copy.tint = table.deepcopy(tint)
   else
-    local new = {}
-    ---@cast new khaoslib_sprites.Animations|khaoslib_sprites.Sprites
-
-    for _, sprite in pairs(copy) do
-      table.insert(new, khaoslib_sprites.tint(sprite, tint))
+    for _, sprite in pairs(_sprites) do
+      table.insert(copy, khaoslib_sprites.tint(sprite, tint))
     end
-    copy = new
   end
 
   return copy

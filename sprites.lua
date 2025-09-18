@@ -21,13 +21,55 @@ local khaoslib_sprites = {}
 --- @alias khaoslib_sprites.SpriteStructures data.Sprite4Way|data.Sprite16Way|data.SpriteVariations
 --- @alias khaoslib_sprites.SpriteAll khaoslib_sprites.Sprite|khaoslib_sprites.Sprites|khaoslib_sprites.SpriteStructures
 
---- Replaces the given animation and sprite files.
+--- Traverses a sprite or animation or a table of them and applies the given function to each sprite/animation found.
+--- @generic T : khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
+--- @param sprites T The sprite or animation or a table of them.
+--- @param fn fun(obj: khaoslib_sprites.Animation|khaoslib_sprites.Sprite): khaoslib_sprites.Animation|khaoslib_sprites.Sprite A function that takes a sprite or animation and returns a modified copy of it.
+--- @return T sprites A copy of the given animation or sprite or a table of them with the modifications applied.
+local function traverse(sprites, fn)
+  if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 3) end
+
+  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
+  local _sprites = sprites
+
+  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
+  local copy = {}
+
+  if _sprites.sheets then
+    copy.sheets = traverse(_sprites.sheets, fn)
+  elseif _sprites.sheet then
+    copy.sheet = traverse(_sprites.sheet, fn)
+  elseif _sprites.north then
+    local directions = {
+      "north", "north_north_east", "north_east", "east_north_east",
+      "east", "east_south_east", "south_east", "south_south_east",
+      "south", "south_south_west", "south_west", "west_south_west",
+      "west", "west_north_west", "north_west", "north_north_west"
+    }
+
+    for _, direction in ipairs(directions) do
+      if _sprites[direction] then copy[direction] = traverse(_sprites[direction], fn) end
+    end
+  elseif _sprites.layers then
+    copy.layers = traverse(_sprites.layers, fn)
+  elseif _sprites.filename then
+    --- @cast _sprites khaoslib_sprites.Animation|khaoslib_sprites.Sprite
+    copy = fn(_sprites)
+  else
+    for _, sprite in ipairs(_sprites) do
+      table.insert(copy, traverse(sprite, fn))
+    end
+  end
+
+  return copy
+end
+
+--- Replaces the given animation and sprite file.
 --- @generic T : khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 --- @param sprites T The animation or sprite or a table of them.
 --- @param replacements {[string]: string} A table where the key is the original filename and the value is the new filename.
 --- @return T # A copy of the given animation or sprite or a table of them with the replaced filenames.
 function khaoslib_sprites.replace(sprites, replacements)
-  if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 2) end
   if type(replacements) ~= "table" then error("replacements parameter: Expected table, got " .. type(replacements), 2) end
 
   for k, v in pairs(replacements) do
@@ -35,85 +77,30 @@ function khaoslib_sprites.replace(sprites, replacements)
     if type(v) ~= "string" then error("replacements value: Expected string, got " .. type(v), 2) end
   end
 
-  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
-  local _sprites = sprites
-
-  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
-  local copy = {}
-
-  if _sprites.sheets then
-    copy.sheets = khaoslib_sprites.replace(_sprites.sheets, replacements)
-  elseif _sprites.sheet then
-    copy.sheet = khaoslib_sprites.replace(_sprites.sheet, replacements)
-  elseif _sprites.north then
-    local directions = {
-      "north", "north_north_east", "north_east", "east_north_east",
-      "east", "east_south_east", "south_east", "south_south_east",
-      "south", "south_south_west", "south_west", "west_south_west",
-      "west", "west_north_west", "north_west", "north_north_west"
-    }
-
-    for _, direction in ipairs(directions) do
-      if _sprites[direction] then copy[direction] = khaoslib_sprites.replace(_sprites[direction], replacements) end
+  return traverse(sprites, function(obj)
+    local copy = util.table.deepcopy(obj)
+    if replacements[obj.filename] then
+      copy.filename = replacements[obj.filename]
     end
-  elseif _sprites.layers then
-    copy.layers = khaoslib_sprites.replace(_sprites.layers, replacements)
-  elseif _sprites.filename then
-    copy = table.deepcopy(_sprites)
-    if replacements[_sprites.filename] then
-      copy.filename = replacements[_sprites.filename]
-    end
-  else
-    for _, sprite in ipairs(_sprites) do
-      table.insert(copy, khaoslib_sprites.replace(sprite, replacements))
-    end
-  end
 
-  return copy
+    return copy
+  end)
 end
 
 --- Tints animations and sprites with possible layers.
 --- @generic T : khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
---- @param sprites T
---- @param tint data.Color
---- @return T
+--- @param sprites T The animation or sprite or a table of them.
+--- @param tint data.Color A color table, e.g. {r=1, g=0.5, b=0, a=0.5}
+--- @return T sprites A copy of the given animation or sprite or a table of them with the tint applied.
 function khaoslib_sprites.tint(sprites, tint)
-  if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 2) end
   if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
 
-  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
-  local _sprites = sprites
-
-  --- @type khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
-  local copy = {}
-
-  if _sprites.sheets then
-    copy.sheets = khaoslib_sprites.tint(_sprites.sheets, tint)
-  elseif _sprites.sheet then
-    copy.sheet = khaoslib_sprites.tint(_sprites.sheet, tint)
-  elseif _sprites.north then
-    local directions = {
-      "north", "north_north_east", "north_east", "east_north_east",
-      "east", "east_south_east", "south_east", "south_south_east",
-      "south", "south_south_west", "south_west", "west_south_west",
-      "west", "west_north_west", "north_west", "north_north_west"
-    }
-
-    for _, direction in ipairs(directions) do
-      if _sprites[direction] then copy[direction] = khaoslib_sprites.tint(_sprites[direction], tint) end
-    end
-  elseif _sprites.layers then
-    copy.layers = khaoslib_sprites.tint(_sprites.layers, tint)
-  elseif _sprites.filename then
-    copy = table.deepcopy(_sprites)
+  return traverse(sprites, function(obj)
+    local copy = table.deepcopy(obj)
     copy.tint = util.copy(tint)
-  else
-    for _, sprite in ipairs(_sprites) do
-      table.insert(copy, khaoslib_sprites.tint(sprite, tint))
-    end
-  end
 
-  return copy
+    return copy
+  end)
 end
 
 return khaoslib_sprites

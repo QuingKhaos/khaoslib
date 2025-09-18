@@ -32,7 +32,6 @@ function khaoslib_sprites.tint(sprites, tint)
   local _sprites = sprites
   ---@cast _sprites khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 
-  -- make a shallow copy of the table to not modify the original one
   local copy = {}
   ---@cast copy khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 

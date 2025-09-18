@@ -2,4 +2,6 @@
 Version: 0.1.0
 Date: ????
   Features:
-    - Adds sprites class to tint a sprite or an animation with possible layers.
+    - Adds a sprites helper function to tint a sprite or an animation with possible layers.
+    - Adds a sprites helper function to replace sprite or animation filenames.
+    - Exposes a sprites traverse function to apply a function to all sprites in a sprite or animation structure with possible layers.

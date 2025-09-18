@@ -2,6 +2,8 @@ if ... ~= "__khaoslib__.sprites" then
   return require("__khaoslib__.sprites")
 end
 
+local util = require("util")
+
 --- Utilities for sprites manipulation.
 --- ```lua
 --- local khaoslib_sprites = require("__khaoslib__.sprites")
@@ -54,7 +56,7 @@ function khaoslib_sprites.tint(sprites, tint)
     copy.layers = khaoslib_sprites.tint(_sprites.layers, tint)
   elseif _sprites.filename then
     copy = table.deepcopy(_sprites)
-    copy.tint = table.deepcopy(tint)
+    copy.tint = util.copy(tint)
   else
     for _, sprite in ipairs(_sprites) do
       table.insert(copy, khaoslib_sprites.tint(sprite, tint))

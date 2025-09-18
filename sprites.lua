@@ -25,8 +25,8 @@ local khaoslib_sprites = {}
 --- @param tint data.Color
 --- @return T
 function khaoslib_sprites.tint(sprites, tint)
-  if type(sprites) ~= "table" then error("Expected table, got " .. type(sprites), 2) end
-  if type(tint) ~= "table" then error("Expected table, got " .. type(tint), 2) end
+  if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 2) end
+  if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
 
   -- local variable purely for intellisense support, because it doesn't infer the types correctly from the generic
   local _sprites = sprites

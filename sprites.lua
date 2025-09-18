@@ -51,6 +51,8 @@ function khaoslib_sprites.tint_all(sprites, tint)
     for _, direction in ipairs(directions) do
       if copy[direction] then copy[direction] = khaoslib_sprites.tint(copy[direction], tint) end
     end
+  elseif copy.filename then
+    copy = khaoslib_sprites.tint(sprites, tint)
   else
     local new = {}
     ---@cast new data.Animation[]|data.AnimationSheet[]|data.RotatedAnimation[]|data.RotatedSprite[]|data.Sprite[]|data.SpriteNWaySheet[]|data.SpriteSheet[]

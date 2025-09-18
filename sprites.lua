@@ -96,7 +96,7 @@ function khaoslib_sprites.tint(sprites, tint)
   if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
 
   return traverse(sprites, function(obj)
-    local copy = table.deepcopy(obj)
+    local copy = util.table.deepcopy(obj)
     copy.tint = util.copy(tint)
 
     return copy

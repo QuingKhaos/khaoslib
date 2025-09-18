@@ -10,13 +10,13 @@ end
 local khaoslib_sprites = {}
 
 --- Tints animations and sprites with possible layers.
---- @generic T : data.Animation|data.Animation[]|data.AnimationSheet|data.AnimationSheet[]|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
+--- @generic T : data.Animation|data.Animation[]|data.Animation4Way|data.AnimationSheet|data.AnimationSheet[]|data.AnimationVariations|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedAnimation8Way|data.RotatedAnimationVariations|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.Sprite16Way|data.Sprite4Way|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.SpriteVariations
 --- @param sprites T
 --- @param tint data.Color
 --- @return T
 function khaoslib_sprites.tint(sprites, tint)
   local copy = table.deepcopy(sprites)
-  ---@cast copy data.Animation|data.Animation[]|data.AnimationSheet|data.AnimationSheet[]|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
+  ---@cast copy data.Animation|data.Animation[]|data.Animation4Way|data.AnimationSheet|data.AnimationSheet[]|data.AnimationVariations|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedAnimation8Way|data.RotatedAnimationVariations|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.Sprite16Way|data.Sprite4Way|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.SpriteVariations
 
   if copy.sheets then
     copy.sheets = khaoslib_sprites.tint(copy.sheets, tint)

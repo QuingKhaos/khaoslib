@@ -9,35 +9,17 @@ end
 --- @class khaoslib_sprites
 local khaoslib_sprites = {}
 
---- Tints a sprite with possible layers.
---- @generic T : data.Animation|data.AnimationSheet|data.RotatedAnimation|data.RotatedSprite|data.Sprite|data.SpriteNWaySheet|data.SpriteSheet
---- @param sprite T
---- @param tint data.Color
---- @return T
-function khaoslib_sprites.tint(sprite, tint)
-  local copy = table.deepcopy(sprite)
-  ---@cast copy data.Animation|data.AnimationSheet|data.RotatedAnimation|data.RotatedSprite|data.Sprite|data.SpriteNWaySheet|data.SpriteSheet
-
-  if copy.layers then
-    copy.layers = khaoslib_sprites.tint_all(copy.layers, tint)
-  else
-    copy.tint = table.deepcopy(tint)
-  end
-
-  return copy
-end
-
---- Tints all sprites with possible layers.
---- @generic T : data.Animation[]|data.AnimationSheet[]|data.RotatedAnimation[]|data.RotatedSprite[]|data.Sprite[]|data.SpriteNWaySheet[]|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
+--- Tints animations and sprites with possible layers.
+--- @generic T : data.Animation|data.Animation[]|data.AnimationSheet|data.AnimationSheet[]|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
 --- @param sprites T
 --- @param tint data.Color
 --- @return T
-function khaoslib_sprites.tint_all(sprites, tint)
+function khaoslib_sprites.tint(sprites, tint)
   local copy = table.deepcopy(sprites)
-  ---@cast copy data.Animation[]|data.AnimationSheet[]|data.RotatedAnimation[]|data.RotatedSprite[]|data.Sprite[]|data.SpriteNWaySheet[]|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
+  ---@cast copy data.Animation|data.Animation[]|data.AnimationSheet|data.AnimationSheet[]|data.RotatedAnimation|data.RotatedAnimation[]|data.RotatedSprite|data.RotatedSprite[]|data.Sprite|data.Sprite[]|data.SpriteNWaySheet|data.SpriteNWaySheet[]|data.SpriteSheet|data.SpriteSheet[]|data.Sprite4Way|data.Sprite16Way
 
   if copy.sheets then
-    copy.sheets = khaoslib_sprites.tint_all(copy.sheets, tint)
+    copy.sheets = khaoslib_sprites.tint(copy.sheets, tint)
   elseif copy.sheet then
     copy.sheet = khaoslib_sprites.tint(copy.sheet, tint)
   elseif copy.north then
@@ -51,8 +33,10 @@ function khaoslib_sprites.tint_all(sprites, tint)
     for _, direction in ipairs(directions) do
       if copy[direction] then copy[direction] = khaoslib_sprites.tint(copy[direction], tint) end
     end
+  elseif copy.layers then
+    copy.layers = khaoslib_sprites.tint(copy.layers, tint)
   elseif copy.filename then
-    copy = khaoslib_sprites.tint(sprites, tint)
+    copy.tint = table.deepcopy(tint)
   else
     local new = {}
     ---@cast new data.Animation[]|data.AnimationSheet[]|data.RotatedAnimation[]|data.RotatedSprite[]|data.Sprite[]|data.SpriteNWaySheet[]|data.SpriteSheet[]

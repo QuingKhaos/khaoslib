@@ -57,7 +57,7 @@ function khaoslib_sprites.tint(sprites, tint)
     copy = table.deepcopy(_sprites)
     copy.tint = table.deepcopy(tint)
   else
-    for _, sprite in pairs(_sprites) do
+    for _, sprite in ipairs(_sprites) do
       table.insert(copy, khaoslib_sprites.tint(sprite, tint))
     end
   end

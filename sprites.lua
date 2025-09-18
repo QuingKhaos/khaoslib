@@ -28,7 +28,7 @@ function khaoslib_sprites.tint(sprites, tint)
   if type(sprites) ~= "table" then error("Expected table, got " .. type(sprites), 2) end
   if type(tint) ~= "table" then error("Expected table, got " .. type(tint), 2) end
 
-  -- local variable purely for intellisense support, because it doesn't infere the types correctly from the generic
+  -- local variable purely for intellisense support, because it doesn't infer the types correctly from the generic
   local _sprites = sprites
   ---@cast _sprites khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 

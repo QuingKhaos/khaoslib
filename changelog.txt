@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: ????
+  Changes:
+    - Pass a copy to the `khaoslib_sprites.traverse` function callback instead of the original sprite/animation.
+    - The callback function of `khaoslib_sprites.traverse` should now modify the passed sprite/animation copy instead of returning a modified copy.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 2025-09-19
   Features:

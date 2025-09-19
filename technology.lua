@@ -329,6 +329,29 @@ function khaoslib_technology:remove_effect(compare_fn)
   return self
 end
 
+--- Replaces the first effect in the technology currently being manipulated that matches the given comparison function with a new effect.
+--- If no matching effect is found, no changes are made.
+--- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it should be replaced.
+--- @param new_effect data.Modifier The new effect to add. See `data.Modifier` for valid effect types.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If compare_fn is not a function or if new_effect is not a table.
+function khaoslib_technology:replace_effect(compare_fn, new_effect)
+  if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
+  if type(new_effect) ~= "table" then error("new_effect parameter: Expected table, got " .. type(new_effect), 2) end
+
+  local effects = self.technology.effects or {}
+  for i, existing in ipairs(effects) do
+    if compare_fn(existing) then
+      effects[i] = util.table.deepcopy(new_effect)
+      self.technology.effects = effects
+
+      return self
+    end
+  end
+
+  return self
+end
+
 --- Removes all effects from the technology currently being manipulated.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:clear_effects()

@@ -224,6 +224,29 @@ function khaoslib_technology:remove_prerequisite(prerequisite)
   return self
 end
 
+--- Replaces an existing prerequisite in the technology currently being manipulated with a new prerequisite.
+--- If no matching prerequisite is found, no changes are made.
+--- @param old_prerequisite data.TechnologyID The name of the prerequisite technology to replace.
+--- @param new_prerequisite data.TechnologyID The name of the new prerequisite technology to add.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If old_prerequisite or new_prerequisite is not a string.
+function khaoslib_technology:replace_prerequisite(old_prerequisite, new_prerequisite)
+  if type(old_prerequisite) ~= "string" then error("old_prerequisite parameter: Expected string, got " .. type(old_prerequisite), 2) end
+  if type(new_prerequisite) ~= "string" then error("new_prerequisite parameter: Expected string, got " .. type(new_prerequisite), 2) end
+
+  local prerequisites = self.technology.prerequisites or {}
+  for i, existing in ipairs(prerequisites) do
+    if existing == old_prerequisite then
+      prerequisites[i] = new_prerequisite
+      self.technology.prerequisites = prerequisites
+
+      return self
+    end
+  end
+
+  return self
+end
+
 --- Removes all prerequisites from the technology currently being manipulated.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:clear_prerequisites()

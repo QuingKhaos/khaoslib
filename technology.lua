@@ -136,4 +136,98 @@ end
 
 --#endregion
 
+--#region Technology manipulation methods
+-- A set of utility functions for manipulating technologies.
+
+--- Returns a list of all prerequisite technologies for the technology currently being manipulated.
+--- @return data.TechnologyID[] prerequisites A list of prerequisite technology names.
+function khaoslib_technology:get_prerequisites()
+  return util.table.deepcopy(self.technology.prerequisites or {})
+end
+
+--- Sets the list of prerequisite technologies for the technology currently being manipulated, replacing any existing prerequisites.
+--- @param prerequisites data.TechnologyID[] A list of prerequisite technology names to set.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If prerequisites is not a table.
+function khaoslib_technology:set_prerequisites(prerequisites)
+  if type(prerequisites) ~= "table" then error("prerequisites parameter: Expected table, got " .. type(prerequisites), 2) end
+
+  self.technology.prerequisites = util.table.deepcopy(prerequisites)
+
+  return self
+end
+
+--- Returns the number of prerequisite technologies for the technology currently being manipulated.
+--- @return integer count The number of prerequisite technologies.
+function khaoslib_technology:count_prerequisites()
+  return #(self.technology.prerequisites or {})
+end
+
+--- Returns `true` if the technology currently being manipulated has the given prerequisite.
+--- @param prerequisite data.TechnologyID The name of the prerequisite technology to check for.
+--- @return boolean has_prerequisite True if the technology has the prerequisite, false otherwise.
+--- @throws If prerequisite is not a string.
+function khaoslib_technology:has_prerequisite(prerequisite)
+  if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
+
+  local prerequisites = self.technology.prerequisites or {}
+  for _, existing in pairs(prerequisites) do
+    if existing == prerequisite then
+      return true
+    end
+  end
+
+  return false
+end
+
+--- Adds a prerequisite to the technology currently being manipulated if it doesn't already exist.
+--- @param prerequisite data.TechnologyID The name of the prerequisite technology to add.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining
+--- @throws If prerequisite is not a string.
+function khaoslib_technology:add_prerequisite(prerequisite)
+  if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
+
+  local prerequisites = self.technology.prerequisites or {}
+  for _, existing in pairs(prerequisites) do
+    if existing == prerequisite then
+      return self
+    end
+  end
+
+  table.insert(prerequisites, prerequisite)
+  self.technology.prerequisites = prerequisites
+
+  return self
+end
+
+--- Removes a prerequisite from the technology currently being manipulated if it exists.
+--- @param prerequisite data.TechnologyID The name of the prerequisite technology to remove.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If prerequisite is not a string.
+function khaoslib_technology:remove_prerequisite(prerequisite)
+  if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
+
+  local prerequisites = self.technology.prerequisites or {}
+  for i, existing in ipairs(prerequisites) do
+    if existing == prerequisite then
+      table.remove(prerequisites, i)
+
+      self.technology.prerequisites = prerequisites
+      return self
+    end
+  end
+
+  return self
+end
+
+--- Removes all prerequisites from the technology currently being manipulated.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+function khaoslib_technology:clear_prerequisites()
+  self.technology.prerequisites = {}
+
+  return self
+end
+
+--#endregion
+
 return khaoslib_technology

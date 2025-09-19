@@ -12,6 +12,44 @@ Add the khaoslib directory to your language server's library. I recommend instal
 
 ## Available Modules
 
+### List Module
+
+Reusable utilities for list manipulation with consistent behavior across Factorio mods. Supports both string-based and function-based comparison logic with automatic deep copying for data safety.
+
+```lua
+local khaoslib_list = require("__khaoslib__.list")
+
+-- Add items with duplicate prevention
+local my_list = {"iron-plate", "copper-plate"}
+khaoslib_list.add(my_list, "steel-plate", "steel-plate")  -- Only adds if not present
+
+-- Allow duplicates when needed
+khaoslib_list.add(my_list, "byproduct", nil, {allow_duplicates = true})
+
+-- Remove items with flexible matching
+khaoslib_list.remove(my_list, "iron-plate")  -- Remove first match
+khaoslib_list.remove(my_list, "byproduct", {all = true})  -- Remove all matches
+
+-- Replace items with automatic deep copying
+khaoslib_list.replace(my_list, "advanced-circuit", "iron-plate")  -- Replace first match
+khaoslib_list.replace(my_list, "steel-plate", "iron-plate", {all = true})  -- Replace all matches
+
+-- Function-based matching for complex objects
+local recipes = {{name = "iron-plate"}, {name = "copper-plate"}}
+khaoslib_list.replace(recipes, {name = "steel-plate", amount = 1}, function(r)
+  return r.name == "iron-plate"
+end)
+```
+
+**Key Features:**
+
+- **Consistent API**: All functions follow the same parameter patterns
+- **Flexible Matching**: String equality or custom comparison functions
+- **Deep Copying**: Automatic deep copying prevents reference sharing issues
+- **Nil-Safe**: All functions handle nil lists gracefully
+
+**[📖 Full List Module Documentation](docs/list-module.md)**
+
 ### Recipe Module
 
 Comprehensive API for manipulating Factorio recipe prototypes during the data stage with method chaining, deep copying, and robust error handling.
@@ -24,17 +62,34 @@ khaoslib_recipe:load("iron-plate")
   :add_ingredient({type = "item", name = "coal", amount = 1})
   :set({energy_required = 2.0})
   :commit()
+
+-- Create new recipe from scratch
+khaoslib_recipe:load({
+  name = "advanced-circuit-with-solder",
+  category = "crafting",
+  energy_required = 5,
+  ingredients = {{type = "item", name = "electronic-circuit", amount = 5}},
+  results = {{type = "item", name = "advanced-circuit", amount = 2}}
+}):commit()
+
+-- Complex ingredient/result manipulation
+local recipe = khaoslib_recipe:load("steel-plate")
+recipe:remove_ingredient("iron-plate")
+  :add_ingredient({type = "item", name = "processed-iron-ore", amount = 1})
+  :replace_result("steel-plate", {type = "item", name = "steel-plate", amount = 2})
+  :commit()
 ```
+
+**Key Features:**
+
+- **Method Chaining**: Fluent API design for readable recipe modifications
+- **Flexible Loading**: Load existing recipes or create new ones from prototypes
+- **Ingredient Management**: Add, remove, replace with duplicate prevention (Factorio requirement)
+- **Result Management**: Full support for multiple results with specialized handling
+- **Deep Copying**: Ensures data stage safety and prevents reference issues
+- **Comprehensive Validation**: Robust error handling with descriptive messages
 
 **[📖 Full Recipe Module Documentation](docs/recipe-module.md)**
-
-### List Module
-
-Core list manipulation utilities with consistent list manipulation behavior.
-
-```lua
-local khaoslib_list = require("__khaoslib__.list")
-```
 
 ### Sprites Module
 

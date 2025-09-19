@@ -212,7 +212,7 @@ function khaoslib_technology:replace_prerequisite(old_prerequisite, new_prerequi
   if type(old_prerequisite) ~= "string" then error("old_prerequisite parameter: Expected string, got " .. type(old_prerequisite), 2) end
   if type(new_prerequisite) ~= "string" then error("new_prerequisite parameter: Expected string, got " .. type(new_prerequisite), 2) end
 
-  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, old_prerequisite, new_prerequisite)
+  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, new_prerequisite, old_prerequisite)
 
   return self
 end
@@ -294,7 +294,7 @@ function khaoslib_technology:replace_effect(compare_fn, new_effect)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
   if type(new_effect) ~= "table" then error("new_effect parameter: Expected table, got " .. type(new_effect), 2) end
 
-  self.technology.effects = khaoslib_list.replace(self.technology.effects, compare_fn, new_effect)
+  self.technology.effects = khaoslib_list.replace(self.technology.effects, new_effect, compare_fn)
 
   return self
 end

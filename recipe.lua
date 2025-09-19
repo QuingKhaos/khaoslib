@@ -348,7 +348,7 @@ function khaoslib_recipe:replace_ingredient(old_ingredient, new_ingredient)
     compare_fn = function(existing) return existing.name == old_ingredient end
   end
 
-  self.recipe.ingredients = khaoslib_list.replace(self.recipe.ingredients, compare_fn, new_ingredient)
+  self.recipe.ingredients = khaoslib_list.replace(self.recipe.ingredients, new_ingredient, compare_fn)
 
   return self
 end
@@ -465,8 +465,7 @@ function khaoslib_recipe:add_result(result)
   if not result.name or type(result.name) ~= "string" then error("result parameter: Must have a name field of type string", 2) end
   if not result.amount or type(result.amount) ~= "number" then error("result parameter: Must have an amount field of type number", 2) end
 
-  self.recipe.results = self.recipe.results or {}
-  table.insert(self.recipe.results, util.table.deepcopy(result))
+  self.recipe.results = khaoslib_list.add(self.recipe.results, result, nil, {allow_duplicates = true})
 
   return self
 end
@@ -592,7 +591,7 @@ function khaoslib_recipe:replace_result(old_result, new_result, options)
 
   if first_only then
     -- Replace only the first match using the list utility
-    self.recipe.results = khaoslib_list.replace(self.recipe.results, compare_fn, new_result)
+    self.recipe.results = khaoslib_list.replace(self.recipe.results, new_result, compare_fn)
   else
     -- Replace all matching results
     self.recipe.results = self.recipe.results or {}

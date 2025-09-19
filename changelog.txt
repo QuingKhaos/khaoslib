@@ -2,6 +2,11 @@
 Version: 0.2.0
 Date: ????
   Features:
+    - Introduces a new list manipulation module with reusable utilities for consistent list operations across mods.
+    - Provides list module functions: has(), add(), remove(), replace() with support for both string and function-based comparisons.
+    - Implements options table support in list module: allow_duplicates for add operations, all parameter for remove/replace operations.
+    - Provides extensive error handling with descriptive messages for invalid parameters and edge cases.
+    - Ensures deep copying integration throughout all add/replace operations for data stage safety.
     - Exposes a technology manipulation object to create, load, modify, and commit technology prototypes.
     - Adds functions to manipulate technology prerequisites.
     - Adds functions to manipulate technology effects.
@@ -13,7 +18,6 @@ Date: ????
     - Provides options tables for extensible parameters (e.g., first_only flag for targeted operations).
     - Includes deep copying throughout for data stage safety and prevents accidental shared state modification.
     - Offers comprehensive validation and error handling with descriptive error messages.
-    - Extracts common list operations into a reusable module to eliminate code duplication and provide consistent list manipulation behavior.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

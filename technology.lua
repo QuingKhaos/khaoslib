@@ -12,15 +12,18 @@ local util = require("util")
 --- local khaoslib_technology = require("__khaoslib__.technology")
 ---
 --- -- Load an existing technology for manipulation
---- khaoslib_technology:load("electronics"):add_prerequisite("solder"):commit()
+--- khaoslib_technology:load("electronics"):add_prerequisite("solder"):add_unlock_recipe("electronic-circuit-with-solder"):commit()
 ---
 --- -- Create a new technology from scratch
 --- khaoslib_technology:load {
 ---   name = "advanced-electronics",
 ---   icon = "__mymod__/graphics/technology/advanced-electronics.png",
----   prerequisites = {"electronics"},
+---   prerequisites = {"advanced-circuit"},
+---   effects = {
+---     {type = "unlock-recipe", recipe = "advanced-circuit-with-solder"},
+---   },
 ---   -- other fields here
---- }:add_prerequisite({"electronics"}):commit()
+--- }:commit()
 --- ```
 --- @class khaoslib.TechnologyManipulator
 --- @field private technology data.TechnologyPrototype The technology currently being manipulated.
@@ -307,6 +310,56 @@ end
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:clear_effects()
   self.technology.effects = {}
+
+  return self
+end
+
+--- Adds an "unlock-recipe" effect to the technology currently being manipulated.
+--- @param recipe data.RecipeID The name of the recipe to unlock.
+--- @param modifier data.UnlockRecipeModifier? modifier Optional modifier table to modify the unlock effect.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If recipe is not a string.
+function khaoslib_technology:add_unlock_recipe(recipe, modifier)
+  if type(recipe) ~= "string" then error("recipe parameter: Expected string, got " .. type(recipe), 2) end
+  if modifier ~= nil and type(modifier) ~= "table" then error("modifier parameter: Expected table or nil, got " .. type(modifier), 2) end
+
+  modifier = modifier or {}
+  modifier.type = "unlock-recipe"
+  modifier.recipe = recipe
+
+  return self:add_effect(modifier)
+end
+
+--- Removes an "unlock-recipe" effect from the technology currently being manipulated.
+--- @param recipe data.RecipeID The name of the recipe to remove.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If recipe is not a string.
+function khaoslib_technology:remove_unlock_recipe(recipe)
+  if type(recipe) ~= "string" then error("recipe parameter: Expected string, got " .. type(recipe), 2) end
+
+  return self:remove_effect(function(effect)
+    return effect.type == "unlock-recipe" and effect.recipe == recipe
+  end)
+end
+
+--- Replaces an existing "unlock-recipe" effect in the technology currently being manipulated with a new recipe.
+--- If no matching effect is found, no changes are made.
+--- @param old_recipe data.RecipeID The name of the recipe to replace.
+--- @param new_recipe data.RecipeID The name of the new recipe to unlock.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If old_recipe or new_recipe is not a string.
+function khaoslib_technology:replace_unlock_recipe(old_recipe, new_recipe)
+  if type(old_recipe) ~= "string" then error("old_recipe parameter: Expected string, got " .. type(old_recipe), 2) end
+  if type(new_recipe) ~= "string" then error("new_recipe parameter: Expected string, got " .. type(new_recipe), 2) end
+
+  local effects = self.technology.effects or {}
+  for _, effect in ipairs(effects) do
+    if effect.type == "unlock-recipe" and effect.recipe == old_recipe then
+      effect.recipe = new_recipe
+
+      return self
+    end
+  end
 
   return self
 end

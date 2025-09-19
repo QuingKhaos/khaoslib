@@ -5,6 +5,7 @@ Date: ????
     - Exposes a technology manipulation object to create, load, modify, and commit technology prototypes.
     - Adds functions to manipulate technology prerequisites.
     - Adds functions to manipulate technology effects.
+    - Adds functions to manipulate recipe unlocks as a specific type of technology effect.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

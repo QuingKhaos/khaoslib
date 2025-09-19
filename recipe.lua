@@ -39,8 +39,8 @@ local util = require("util")
 --- recipe:add_result({type = "item", name = "byproduct", amount = 1})
 ---   :add_result({type = "item", name = "byproduct", amount = 2})
 --- recipe:count_matching_results("byproduct") -- returns 2
---- recipe:remove_result("byproduct", {first_only = true}) -- removes first match only
---- recipe:remove_result("byproduct") -- removes all remaining matches
+--- recipe:remove_result("byproduct") -- removes first match by default
+--- recipe:remove_result("byproduct", {all = true}) -- removes all matches
 ---
 --- -- Create a new recipe from scratch
 --- khaoslib_recipe:load {
@@ -291,64 +291,84 @@ function khaoslib_recipe:add_ingredient(ingredient)
   return self
 end
 
---- Removes the first matching ingredient from the recipe if it exists.
+--- Removes matching ingredients from the recipe.
 ---
 --- ```lua
---- -- By name (string)
+--- -- By name (string) - removes first match by default
 --- recipe:remove_ingredient("iron-ore")
 ---
---- -- By comparison function
+--- -- By comparison function - removes first match by default
 --- recipe:remove_ingredient(function(ingredient)
 ---   return ingredient.amount > 10
 --- end)
+---
+--- -- Remove all matching ingredients
+--- recipe:remove_ingredient(function(ingredient)
+---   return ingredient.type == "fluid"
+--- end, {all = true})
 --- ```
 ---
 --- @param compare function|string A comparison function or ingredient name to match.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching ingredients instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If compare is not a string or function.
-function khaoslib_recipe:remove_ingredient(compare)
+function khaoslib_recipe:remove_ingredient(compare, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+  if options ~= nil and type(options) ~= "table" then error("options parameter: Expected table or nil, got " .. type(options), 2) end
+
+  options = options or {}
+  local remove_all = options.all or false
 
   local compare_fn = compare
   if type(compare) == "string" then
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  self.recipe.ingredients = khaoslib_list.remove(self.recipe.ingredients, compare_fn)
+  self.recipe.ingredients = khaoslib_list.remove(self.recipe.ingredients, compare_fn, {all = remove_all})
 
   return self
 end
 
---- Replaces the first matching ingredient with a new ingredient.
---- If no matching ingredient is found, no changes are made.
+--- Replaces matching ingredients with a new ingredient.
+--- If no matching ingredients are found, no changes are made.
 ---
 --- ```lua
---- -- Replace by name (string parameter)
+--- -- Replace by name (string parameter) - replaces first match by default
 --- recipe:replace_ingredient("iron-ore", {type = "item", name = "processed-iron-ore", amount = 1})
 ---
---- -- Replace with custom function (function parameter)
+--- -- Replace with custom function (function parameter) - replaces first match by default
 --- recipe:replace_ingredient(function(ingredient)
 ---   return ingredient.type == "fluid" and ingredient.amount > 50
 --- end, {type = "fluid", name = "purified-water", amount = 25})
+---
+--- -- Replace all matching ingredients
+--- recipe:replace_ingredient(function(ingredient)
+---   return ingredient.type == "fluid"
+--- end, {type = "fluid", name = "water", amount = 10}, {all = true})
 --- ```
 ---
 --- @param old_ingredient function|string A comparison function or ingredient name to match.
 --- @param new_ingredient data.IngredientPrototype The new ingredient prototype to replace with.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching ingredients instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If old_ingredient is not a string or function, or new_ingredient is not a table.
-function khaoslib_recipe:replace_ingredient(old_ingredient, new_ingredient)
+function khaoslib_recipe:replace_ingredient(old_ingredient, new_ingredient, options)
   if type(old_ingredient) ~= "string" and type(old_ingredient) ~= "function" then error("old_ingredient parameter: Expected string or function, got " .. type(old_ingredient), 2) end
   if type(new_ingredient) ~= "table" then error("new_ingredient parameter: Expected table, got " .. type(new_ingredient), 2) end
   if not new_ingredient.type or type(new_ingredient.type) ~= "string" then error("new_ingredient parameter: Must have a type field of type string", 2) end
   if not new_ingredient.name or type(new_ingredient.name) ~= "string" then error("new_ingredient parameter: Must have a name field of type string", 2) end
   if not new_ingredient.amount or type(new_ingredient.amount) ~= "number" then error("new_ingredient parameter: Must have an amount field of type number", 2) end
+  if options ~= nil and type(options) ~= "table" then error("options parameter: Expected table or nil, got " .. type(options), 2) end
+
+  options = options or {}
+  local replace_all = options.all or false
 
   local compare_fn = old_ingredient
   if type(old_ingredient) == "string" then
     compare_fn = function(existing) return existing.name == old_ingredient end
   end
 
-  self.recipe.ingredients = khaoslib_list.replace(self.recipe.ingredients, new_ingredient, compare_fn)
+  self.recipe.ingredients = khaoslib_list.replace(self.recipe.ingredients, new_ingredient, compare_fn, {all = replace_all})
 
   return self
 end
@@ -508,20 +528,20 @@ end
 --- Removes matching results from the recipe.
 ---
 --- ```lua
---- -- Remove by name (string parameter)
+--- -- Remove by name (string parameter) - removes first match by default
 --- khaoslib.recipe("electronic-circuit"):remove_result("copper-cable")
 ---
---- -- Remove with custom function (function parameter)
+--- -- Remove with custom function (function parameter) - removes first match by default
 --- khaoslib.recipe("electronic-circuit"):remove_result(function(result)
 ---   return result.name == "electronic-circuit" and (result.amount or 1) > 1
 --- end)
 ---
---- -- Remove only the first match
---- khaoslib.recipe("electronic-circuit"):remove_result("electronic-circuit", {first_only = true})
+--- -- Remove all matches
+--- khaoslib.recipe("electronic-circuit"):remove_result("electronic-circuit", {all = true})
 --- ```
 ---
 --- @param compare function|string A comparison function or result name to match.
---- @param options table? Options table with fields: `first_only` (boolean, default false) - if true, removes only the first match.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching results instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If compare is not a string or function.
 function khaoslib_recipe:remove_result(compare, options)
@@ -529,25 +549,14 @@ function khaoslib_recipe:remove_result(compare, options)
   if options ~= nil and type(options) ~= "table" then error("options parameter: Expected table or nil, got " .. type(options), 2) end
 
   options = options or {}
-  local first_only = options.first_only or false
+  local remove_all = options.all or false
 
   local compare_fn = compare
   if type(compare) == "string" then
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  if first_only then
-    -- Remove only the first match using the list utility
-    self.recipe.results = khaoslib_list.remove(self.recipe.results, compare_fn)
-  else
-    -- Remove all matching results by iterating backwards to avoid index issues
-    self.recipe.results = self.recipe.results or {}
-    for i = #self.recipe.results, 1, -1 do
-      if compare_fn(self.recipe.results[i]) then
-        table.remove(self.recipe.results, i)
-      end
-    end
-  end
+  self.recipe.results = khaoslib_list.remove(self.recipe.results, compare_fn, {all = remove_all})
 
   return self
 end
@@ -556,21 +565,21 @@ end
 --- If no matching results are found, no changes are made.
 ---
 --- ```lua
---- -- Replace by name (string parameter)
+--- -- Replace by name (string parameter) - replaces first match by default
 --- recipe:replace_result("iron-plate", {type = "item", name = "steel-plate", amount = 1})
 ---
---- -- Replace with custom function (function parameter)
+--- -- Replace with custom function (function parameter) - replaces first match by default
 --- recipe:replace_result(function(result)
 ---   return result.probability and result.probability < 0.5
 --- end, {type = "item", name = "rare-metal", amount = 1, probability = 0.1})
 ---
---- -- Replace only the first match
---- recipe:replace_result("electronic-circuit", {type = "item", name = "advanced-circuit", amount = 1}, {first_only = true})
+--- -- Replace all matches
+--- recipe:replace_result("electronic-circuit", {type = "item", name = "advanced-circuit", amount = 1}, {all = true})
 --- ```
 ---
 --- @param old_result function|string A comparison function or result name to match.
 --- @param new_result data.ProductPrototype The new result prototype to replace with.
---- @param options table? Options table with fields: `first_only` (boolean, default false) - if true, replaces only the first match.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching results instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If old_result is not a string or function, or new_result is not a table.
 function khaoslib_recipe:replace_result(old_result, new_result, options)
@@ -582,25 +591,14 @@ function khaoslib_recipe:replace_result(old_result, new_result, options)
   if options ~= nil and type(options) ~= "table" then error("options parameter: Expected table or nil, got " .. type(options), 2) end
 
   options = options or {}
-  local first_only = options.first_only or false
+  local replace_all = options.all or false
 
   local compare_fn = old_result
   if type(old_result) == "string" then
     compare_fn = function(existing) return existing.name == old_result end
   end
 
-  if first_only then
-    -- Replace only the first match using the list utility
-    self.recipe.results = khaoslib_list.replace(self.recipe.results, new_result, compare_fn)
-  else
-    -- Replace all matching results
-    self.recipe.results = self.recipe.results or {}
-    for i, result in ipairs(self.recipe.results) do
-      if compare_fn(result) then
-        self.recipe.results[i] = util.table.deepcopy(new_result)
-      end
-    end
-  end
+  self.recipe.results = khaoslib_list.replace(self.recipe.results, new_result, compare_fn, {all = replace_all})
 
   return self
 end

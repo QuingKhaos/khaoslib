@@ -81,11 +81,16 @@ recipe:add_result({type = "item", name = "byproduct", amount = 2}) -- Both added
 Many functions accept options tables for extensible configuration:
 
 ```lua
--- Remove only first matching result
-recipe:remove_result("byproduct", {first_only = true})
+-- Remove all matching results
+recipe:remove_result("byproduct", {all = true})
 
--- Replace only first matching result
-recipe:replace_result("old-item", new_item, {first_only = true})
+-- Replace all matching results
+recipe:replace_result("old-item", new_item, {all = true})
+
+-- Remove all matching ingredients
+recipe:remove_ingredient(function(ingredient)
+  return ingredient.type == "fluid"
+end, {all = true})
 ```
 
 ## API Reference
@@ -182,30 +187,45 @@ recipe:add_ingredient({
 })
 ```
 
-#### `recipe:remove_ingredient(compare)`
+#### `recipe:remove_ingredient(compare, options?)`
 
-Removes first matching ingredient.
+Removes matching ingredients.
 
 ```lua
--- By name (string)
+-- By name (string) - removes first match by default
 recipe:remove_ingredient("iron-ore")
 
--- By comparison function
+-- By comparison function - removes first match by default
 recipe:remove_ingredient(function(ingredient)
   return ingredient.amount > 10
 end)
+
+-- Remove all matching ingredients
+recipe:remove_ingredient(function(ingredient)
+  return ingredient.type == "fluid"
+end, {all = true})
 ```
 
-#### `recipe:replace_ingredient(old, new)`
+#### `recipe:replace_ingredient(old, new, options?)`
 
-Replaces first matching ingredient.
+Replaces matching ingredients.
 
 ```lua
+-- Replace first matching ingredient by default
 recipe:replace_ingredient("iron-ore", {
   type = "item",
   name = "iron-plate",
   amount = 1
 })
+
+-- Replace all matching ingredients
+recipe:replace_ingredient(function(ingredient)
+  return ingredient.type == "fluid"
+end, {
+  type = "fluid",
+  name = "water",
+  amount = 10
+}, {all = true})
 ```
 
 #### `recipe:has_ingredient(compare)`
@@ -250,16 +270,21 @@ recipe:add_result({
 Removes matching results.
 
 ```lua
--- Remove all matches by name (string)
+-- Remove first match by name (string) - default behavior
 recipe:remove_result("unwanted-byproduct")
 
--- Remove first match only by name
-recipe:remove_result("byproduct", {first_only = true})
+-- Remove all matches by name
+recipe:remove_result("byproduct", {all = true})
 
--- Remove by comparison function
+-- Remove by comparison function - first match by default
 recipe:remove_result(function(result)
   return result.probability and result.probability < 0.05
 end)
+
+-- Remove all matches by comparison function
+recipe:remove_result(function(result)
+  return result.probability and result.probability < 0.05
+end, {all = true})
 ```
 
 #### `recipe:replace_result(old, new, options?)`
@@ -267,15 +292,25 @@ end)
 Replaces matching results.
 
 ```lua
--- Replace all matches
+-- Replace first match by default
 recipe:replace_result("iron-plate", {
   type = "item",
   name = "steel-plate",
   amount = 1,
 })
 
--- Replace first match only
-recipe:replace_result("byproduct", new_result, {first_only = true})
+-- Replace all matches
+recipe:replace_result("byproduct", new_result, {all = true})
+
+-- Replace all matches with comparison function
+recipe:replace_result(function(result)
+  return result.probability and result.probability < 0.1
+end, {
+  type = "item",
+  name = "rare-metal",
+  amount = 1,
+  probability = 0.05
+}, {all = true})
 ```
 
 #### `recipe:count_matching_results(compare)`
@@ -366,16 +401,32 @@ end
 for recipe_name, recipe_data in pairs(data.raw.recipe) do
   local recipe = khaoslib_recipe:load(recipe_name)
 
-  -- Remove any results with probability < 5%
+  -- Remove all results with probability < 5%
   recipe:remove_result(function(result)
     return result.probability and result.probability < 0.05
-  end)
+  end, {all = true})
 
   -- Only commit if we actually have results left
   if recipe:count_results() > 0 then
     recipe:commit()
   else
     recipe:remove() -- Delete recipes with no results
+  end
+end
+
+-- Replace all fluid ingredients with water in specific recipes
+local water_recipes = {"concrete", "sulfuric-acid", "battery"}
+for _, recipe_name in ipairs(water_recipes) do
+  if data.raw.recipe[recipe_name] then
+    khaoslib_recipe:load(recipe_name)
+      :replace_ingredient(function(ingredient)
+        return ingredient.type == "fluid"
+      end, {
+        type = "fluid",
+        name = "water",
+        amount = 10
+      }, {all = true})
+      :commit()
   end
 end
 ```

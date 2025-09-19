@@ -15,7 +15,7 @@ Date: ????
     - Adds comprehensive ingredient manipulation: add, remove, replace, and query ingredients with duplicate prevention.
     - Adds advanced result manipulation: add, remove, replace, count, and query results with full duplicate support.
     - Supports both string-based matching (by name) and custom comparison functions for flexible ingredient/result filtering.
-    - Provides options tables for extensible parameters (e.g., first_only flag for targeted operations).
+    - Provides options tables for extensible parameters (e.g., all flag for bulk operations on matching items).
     - Includes deep copying throughout for data stage safety and prevents accidental shared state modification.
     - Offers comprehensive validation and error handling with descriptive error messages.
 ---------------------------------------------------------------------------------------------------

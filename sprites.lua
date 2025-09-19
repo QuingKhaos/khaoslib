@@ -24,7 +24,7 @@ local khaoslib_sprites = {}
 --- Traverses a sprite or animation or a table of them and applies the given function to each sprite/animation found.
 --- @generic T : khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 --- @param sprites T The sprite or animation or a table of them.
---- @param fn fun(sprite: khaoslib_sprites.Animation|khaoslib_sprites.Sprite): khaoslib_sprites.Animation|khaoslib_sprites.Sprite A function that takes a sprite or animation and returns a modified copy of it.
+--- @param fn fun(sprite: khaoslib_sprites.Animation|khaoslib_sprites.Sprite): nil A function that takes a sprite or animation copy and applies modifications to it.
 --- @return T sprites A copy of the given animation or sprite or a table of them with the modifications applied.
 function khaoslib_sprites.traverse(sprites, fn)
   if type(sprites) ~= "table" then error("sprites parameter: Expected table, got " .. type(sprites), 3) end
@@ -51,8 +51,8 @@ function khaoslib_sprites.traverse(sprites, fn)
   elseif sprites.layers then
     copy.layers = khaoslib_sprites.traverse(sprites.layers, fn)
   elseif sprites.filename then
-    --- @cast sprites khaoslib_sprites.Animation|khaoslib_sprites.Sprite
-    copy = fn(sprites)
+    copy = util.table.deepcopy(sprites) --- @cast copy khaoslib_sprites.Animation|khaoslib_sprites.Sprite
+    fn(copy)
   else
     for _, sprite in ipairs(sprites) do
       table.insert(copy, khaoslib_sprites.traverse(sprite, fn))
@@ -76,12 +76,9 @@ function khaoslib_sprites.replace(sprites, replacements)
   end
 
   return khaoslib_sprites.traverse(sprites, function(sprite)
-    local copy = util.table.deepcopy(sprite)
     if replacements[sprite.filename] then
-      copy.filename = replacements[sprite.filename]
+      sprite.filename = replacements[sprite.filename]
     end
-
-    return copy
   end)
 end
 
@@ -94,10 +91,7 @@ function khaoslib_sprites.tint(sprites, tint)
   if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
 
   return khaoslib_sprites.traverse(sprites, function(sprite)
-    local copy = util.table.deepcopy(sprite)
-    copy.tint = util.copy(tint)
-
-    return copy
+    sprite.tint = util.copy(tint)
   end)
 end
 

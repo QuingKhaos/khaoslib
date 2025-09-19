@@ -360,6 +360,18 @@ function khaoslib_technology:clear_effects()
   return self
 end
 
+--- Returns `true` if the technology currently being manipulated has an "unlock-recipe" effect for the given recipe.
+--- @param recipe data.RecipeID The name of the recipe to check for.
+--- @return boolean has_unlock_recipe True if the technology has an unlock-recipe effect for the recipe, false otherwise.
+--- @throws If recipe is not a string.
+function khaoslib_technology:has_unlock_recipe(recipe)
+  if type(recipe) ~= "string" then error("recipe parameter: Expected string, got " .. type(recipe), 2) end
+
+  return self:has_effect(function(effect)
+    return effect.type == "unlock-recipe" and effect.recipe == recipe
+  end)
+end
+
 --- Adds an "unlock-recipe" effect to the technology currently being manipulated.
 --- @param recipe data.RecipeID The name of the recipe to unlock.
 --- @param modifier data.UnlockRecipeModifier? modifier Optional modifier table to modify the unlock effect.

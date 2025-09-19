@@ -11,15 +11,16 @@ local util = require("util")
 --- ```lua
 --- local khaoslib_technology = require("__khaoslib__.technology")
 ---
---- -- Load an existing technology for manipulation and replace icon
---- khaoslib_technology:load("electronics"):set({icon = "__mymod__/graphics/technology/electronics.png"}):commit()
+--- -- Load an existing technology for manipulation
+--- khaoslib_technology:load("electronics"):add_prerequisite("solder"):commit()
 ---
 --- -- Create a new technology from scratch
 --- khaoslib_technology:load {
 ---   name = "advanced-electronics",
 ---   icon = "__mymod__/graphics/technology/advanced-electronics.png",
+---   prerequisites = {"electronics"},
 ---   -- other fields here
---- }:commit()
+--- }:add_prerequisite({"electronics"}):commit()
 --- ```
 --- @class khaoslib.TechnologyManipulator
 --- @field private technology data.TechnologyPrototype The technology currently being manipulated.
@@ -211,8 +212,8 @@ function khaoslib_technology:remove_prerequisite(prerequisite)
   for i, existing in ipairs(prerequisites) do
     if existing == prerequisite then
       table.remove(prerequisites, i)
-
       self.technology.prerequisites = prerequisites
+
       return self
     end
   end
@@ -224,6 +225,88 @@ end
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:clear_prerequisites()
   self.technology.prerequisites = {}
+
+  return self
+end
+
+--- Returns a list of all effects granted by the technology currently being manipulated.
+--- @return data.Modifier[] effects A list of effects granted by the technology.
+function khaoslib_technology:get_effects()
+  return util.table.deepcopy(self.technology.effects or {})
+end
+
+--- Sets the list of effects granted by the technology currently being manipulated, replacing any existing effects.
+--- @param effects data.Modifier[] A list of effects to set.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If effects is not a table.
+function khaoslib_technology:set_effects(effects)
+  if type(effects) ~= "table" then error("effects parameter: Expected table, got " .. type(effects), 2) end
+
+  self.technology.effects = util.table.deepcopy(effects)
+
+  return self
+end
+
+--- Returns the number of effects granted by the technology currently being manipulated.
+--- @return integer count The number of effects.
+function khaoslib_technology:count_effects()
+  return #(self.technology.effects or {})
+end
+
+--- Returns `true` if the technology currently being manipulated has an effect that matches the given comparison function.
+--- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it matches.
+--- @return boolean has_effect True if the technology has a matching effect, false otherwise.
+--- @throws If compare_fn is not a function.
+function khaoslib_technology:has_effect(compare_fn)
+  if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
+
+  local effects = self.technology.effects or {}
+  for _, existing in pairs(effects) do
+    if compare_fn(existing) then
+      return true
+    end
+  end
+
+  return false
+end
+
+--- Adds an effect to the technology currently being manipulated.
+--- @param effect data.Modifier The effect to add. See `data.Modifier` for valid effect types.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If effect is not a table.
+function khaoslib_technology:add_effect(effect)
+  if type(effect) ~= "table" then error("effect parameter: Expected table, got " .. type(effect), 2) end
+
+  self.technology.effects = self.technology.effects or {}
+  table.insert(self.technology.effects, util.table.deepcopy(effect))
+
+  return self
+end
+
+--- Removes the first effect from the technology currently being manipulated that matches the given comparison function.
+--- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it should be removed.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If compare_fn is not a function.
+function khaoslib_technology:remove_effect(compare_fn)
+  if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
+
+  local effects = self.technology.effects or {}
+  for i, existing in ipairs(effects) do
+    if compare_fn(existing) then
+      table.remove(effects, i)
+      self.technology.effects = effects
+
+      return self
+    end
+  end
+
+  return self
+end
+
+--- Removes all effects from the technology currently being manipulated.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+function khaoslib_technology:clear_effects()
+  self.technology.effects = {}
 
   return self
 end

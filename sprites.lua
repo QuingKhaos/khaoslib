@@ -91,7 +91,7 @@ function khaoslib_sprites.tint(sprites, tint)
   if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
 
   return khaoslib_sprites.traverse(sprites, function(sprite)
-    sprite.tint = tint
+    sprite.tint = util.copy(tint)
   end)
 end
 

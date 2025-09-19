@@ -6,6 +6,7 @@ Date: ????
     - Adds functions to manipulate technology prerequisites.
     - Adds functions to manipulate technology effects.
     - Adds functions to manipulate recipe unlocks as a specific type of technology effect.
+    - Extracts common list operations into a reusable module to eliminate code duplication and provide consistent list manipulation behavior.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

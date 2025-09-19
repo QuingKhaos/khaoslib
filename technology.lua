@@ -2,6 +2,7 @@ if ... ~= "__khaoslib__.technology" then
   return require("__khaoslib__.technology")
 end
 
+local khaoslib_list = require("__khaoslib__.list")
 local util = require("util")
 
 --#region Basic manipulation methods
@@ -140,92 +141,6 @@ end
 
 --#endregion
 
---#region Helper functions for list manipulation
--- Common functions to avoid code duplication in list operations
-
---- Helper function to check if a list contains an item matching a comparison function
---- @param list table The list to search in
---- @param compare_fn function|string A comparison function or string to match
---- @return boolean has_item True if the list contains a matching item
-local function has_list_item(list, compare_fn)
-  if not list then return false end
-
-  local compare = compare_fn
-  if type(compare_fn) == "string" then
-    compare = function(item) return item == compare_fn end
-  end
-
-  for _, item in pairs(list) do
-    if compare(item) then
-      return true
-    end
-  end
-
-  return false
-end
-
---- Helper function to add an item to a list if it doesn't already exist
---- @param list table The list to add to
---- @param item any The item to add
---- @param compare_fn function|string A comparison function or string to check for duplicates
---- @return table list The modified list
-local function add_list_item(list, item, compare_fn)
-  list = list or {}
-
-  if not has_list_item(list, compare_fn) then
-    table.insert(list, item)
-  end
-
-  return list
-end
-
---- Helper function to remove an item from a list
---- @param list table The list to remove from
---- @param compare_fn function|string A comparison function or string to match
---- @return table list The modified list
-local function remove_list_item(list, compare_fn)
-  if not list then return {} end
-
-  local compare = compare_fn
-  if type(compare_fn) == "string" then
-    compare = function(item) return item == compare_fn end
-  end
-
-  for i, item in ipairs(list) do
-    if compare(item) then
-      table.remove(list, i)
-      break
-    end
-  end
-
-  return list
-end
-
---- Helper function to replace an item in a list
---- @param list table The list to modify
---- @param compare_fn function|string A comparison function or string to match
---- @param new_item any The new item to replace with
---- @return table list The modified list
-local function replace_list_item(list, compare_fn, new_item)
-  if not list then return {} end
-
-  local compare = compare_fn
-  if type(compare_fn) == "string" then
-    compare = function(item) return item == compare_fn end
-  end
-
-  for i, item in ipairs(list) do
-    if compare(item) then
-      list[i] = new_item
-      break
-    end
-  end
-
-  return list
-end
-
---#endregion
-
 --#region Technology manipulation methods
 -- A set of utility functions for manipulating technologies.
 
@@ -260,7 +175,7 @@ end
 function khaoslib_technology:has_prerequisite(prerequisite)
   if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
 
-  return has_list_item(self.technology.prerequisites, prerequisite)
+  return khaoslib_list.has(self.technology.prerequisites, prerequisite)
 end
 
 --- Adds a prerequisite to the technology currently being manipulated if it doesn't already exist.
@@ -270,7 +185,7 @@ end
 function khaoslib_technology:add_prerequisite(prerequisite)
   if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
 
-  self.technology.prerequisites = add_list_item(self.technology.prerequisites, prerequisite, prerequisite)
+  self.technology.prerequisites = khaoslib_list.add(self.technology.prerequisites, prerequisite, prerequisite)
 
   return self
 end
@@ -282,7 +197,7 @@ end
 function khaoslib_technology:remove_prerequisite(prerequisite)
   if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
 
-  self.technology.prerequisites = remove_list_item(self.technology.prerequisites, prerequisite)
+  self.technology.prerequisites = khaoslib_list.remove(self.technology.prerequisites, prerequisite)
 
   return self
 end
@@ -297,7 +212,7 @@ function khaoslib_technology:replace_prerequisite(old_prerequisite, new_prerequi
   if type(old_prerequisite) ~= "string" then error("old_prerequisite parameter: Expected string, got " .. type(old_prerequisite), 2) end
   if type(new_prerequisite) ~= "string" then error("new_prerequisite parameter: Expected string, got " .. type(new_prerequisite), 2) end
 
-  self.technology.prerequisites = replace_list_item(self.technology.prerequisites, old_prerequisite, new_prerequisite)
+  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, old_prerequisite, new_prerequisite)
 
   return self
 end
@@ -341,7 +256,7 @@ end
 function khaoslib_technology:has_effect(compare_fn)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
-  return has_list_item(self.technology.effects, compare_fn)
+  return khaoslib_list.has(self.technology.effects, compare_fn)
 end
 
 --- Adds an effect to the technology currently being manipulated.
@@ -364,7 +279,7 @@ end
 function khaoslib_technology:remove_effect(compare_fn)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
-  self.technology.effects = remove_list_item(self.technology.effects, compare_fn)
+  self.technology.effects = khaoslib_list.remove(self.technology.effects, compare_fn)
 
   return self
 end
@@ -379,7 +294,7 @@ function khaoslib_technology:replace_effect(compare_fn, new_effect)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
   if type(new_effect) ~= "table" then error("new_effect parameter: Expected table, got " .. type(new_effect), 2) end
 
-  self.technology.effects = replace_list_item(self.technology.effects, compare_fn, util.table.deepcopy(new_effect))
+  self.technology.effects = khaoslib_list.replace(self.technology.effects, compare_fn, util.table.deepcopy(new_effect))
 
   return self
 end

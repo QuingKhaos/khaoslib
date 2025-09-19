@@ -2,6 +2,8 @@ if ... ~= "__khaoslib__.list" then
   return require("__khaoslib__.list")
 end
 
+local util = require("util")
+
 --- Reusable utilities for list manipulation to provide a consistent list manipulation behavior.
 ---
 --- This module provides common operations for working with lists/arrays,
@@ -52,7 +54,7 @@ function khaoslib_list.add(list, item, compare)
   list = list or {}
 
   if not khaoslib_list.has(list, compare) then
-    table.insert(list, item)
+    table.insert(list, util.table.deepcopy(item))
   end
 
   return list
@@ -89,7 +91,7 @@ function khaoslib_list.replace(list, compare, new_item)
 
   for i, item in ipairs(list) do
     if compare_fn(item) then
-      list[i] = new_item
+      list[i] = util.table.deepcopy(new_item)
       break
     end
   end

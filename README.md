@@ -6,9 +6,43 @@ A set of commonly-used utilities by QuingKhaos for creating Factorio mods.
 
 ## Usage
 
-Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads) or [GitHub releases](https://github.com/QuingKhaos/khaoslib/releases), unzip it and put it in your mods directory. You can access libraries provided by khaoslib with `require("__khaoslib__.libname")`.
+Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads) or [GitHub releases](https://github.com/QuingKhaos/khaoslib/releases), unzip it and put it in your mods directory. You can access libraries provided by khaoslib with `require("__khaoslib__.module")`.
 
 Add the khaoslib directory to your language server's library. I recommend installing the [Factorio modding toolkit](https://github.com/justarandomgeek/vscode-factoriomod-debug) and setting it up with the [Sumneko Lua language server](https://github.com/sumneko/lua-language-server) to get cross-mod autocomplete and type checking.
+
+## Available Modules
+
+### Recipe Module
+
+Comprehensive API for manipulating Factorio recipe prototypes during the data stage with method chaining, deep copying, and robust error handling.
+
+```lua
+local khaoslib_recipe = require("__khaoslib__.recipe")
+
+-- Modify existing recipe
+khaoslib_recipe:load("iron-plate")
+  :add_ingredient({type = "item", name = "coal", amount = 1})
+  :set({energy_required = 2.0})
+  :commit()
+```
+
+**[📖 Full Recipe Module Documentation](docs/recipe-module.md)**
+
+### List Module
+
+Core list manipulation utilities with consistent list manipulation behavior.
+
+```lua
+local khaoslib_list = require("__khaoslib__.list")
+```
+
+### Sprites Module
+
+Utilities for working with Factorio sprites and graphics.
+
+```lua
+local khaoslib_sprites = require("__khaoslib__.sprites")
+```
 
 ## Stability guarantee
 

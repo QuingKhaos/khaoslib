@@ -6,6 +6,13 @@ Date: ????
     - Adds functions to manipulate technology prerequisites.
     - Adds functions to manipulate technology effects.
     - Adds functions to manipulate recipe unlocks as a specific type of technology effect.
+    - Exposes a recipe manipulation object to create, load, modify, and commit recipe prototypes with fluent API and method chaining.
+    - Adds comprehensive ingredient manipulation: add, remove, replace, and query ingredients with duplicate prevention.
+    - Adds advanced result manipulation: add, remove, replace, count, and query results with full duplicate support.
+    - Supports both string-based matching (by name) and custom comparison functions for flexible ingredient/result filtering.
+    - Provides options tables for extensible parameters (e.g., first_only flag for targeted operations).
+    - Includes deep copying throughout for data stage safety and prevents accidental shared state modification.
+    - Offers comprehensive validation and error handling with descriptive error messages.
     - Extracts common list operations into a reusable module to eliminate code duplication and provide consistent list manipulation behavior.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1

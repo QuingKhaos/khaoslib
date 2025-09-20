@@ -625,7 +625,9 @@ end
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If old_result is not a string or function, or new_result is not a table.
 function khaoslib_recipe:replace_result(old_result, new_result, options)
-  if type(old_result) ~= "string" and type(old_result) ~= "function" then error("old_result parameter: Expected string or function, got " .. type(old_result), 2) end
+  if type(old_result) ~= "string" and type(old_result) ~= "function" then
+    error("old_result parameter: Expected string or function, got " .. type(old_result), 2)
+  end
   if type(new_result) ~= "table" then error("new_result parameter: Expected table, got " .. type(new_result), 2) end
   if not new_result.type or type(new_result.type) ~= "string" then error("new_result parameter: Must have a type field of type string", 2) end
   if not new_result.name or type(new_result.name) ~= "string" then error("new_result parameter: Must have a name field of type string", 2) end

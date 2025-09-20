@@ -2,7 +2,8 @@
 
 ## Testing Infrastructure Status ✅
 
-The Lua unit testing infrastructure has been successfully set up for khaoslib with the following components:
+The Lua unit testing infrastructure has been successfully set up for khaoslib with
+the following components:
 
 ### Files Created
 
@@ -111,7 +112,8 @@ lua tests/test_technology.lua
 - ✅ Error handling and parameter validation
 - ✅ Integration tests and chained operations
 
-All test suites include comprehensive mocking of the Factorio environment and proper isolation between test cases.
+All test suites include comprehensive mocking of the Factorio environment and proper
+isolation between test cases.
 
 ## Next Steps
 

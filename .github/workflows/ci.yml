@@ -8,41 +8,43 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-matrix:
     runs-on: ubuntu-latest
+    name: Test Matrix
+    strategy:
+      matrix:
+        lua-version: ["5.2", "5.4"]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Lua 5.2
+      - name: Set up Lua ${{ matrix.lua-version }}
         uses: leafo/gh-actions-lua@v10
         with:
-          luaVersion: "5.2"
+          luaVersion: ${{ matrix.lua-version }}
 
-      - name: Install LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
-
-      - name: Run List Module Tests
+      - name: Run All Tests
         run: |
+          echo "🧪 Running tests with Lua ${{ matrix.lua-version }}"
           cd tests
+
+          echo "Testing List Module..."
           lua test_list.lua
 
-      - name: Run Recipe Module Tests
-        run: |
-          cd tests
+          echo "Testing Recipe Module..."
           lua test_recipe.lua
 
-      - name: Run Technology Module Tests
-        run: |
-          cd tests
+          echo "Testing Technology Module..."
           lua test_technology.lua
+
+          echo "✅ All tests passed with Lua ${{ matrix.lua-version }}!"
 
       - name: Test Summary
         run: |
-          echo "✅ All tests completed successfully!"
-          echo "📊 Test Coverage:"
+          echo "📊 Test Coverage (Lua ${{ matrix.lua-version }}):"
           echo "  - List Module: 30 tests"
           echo "  - Recipe Module: 9 tests"
           echo "  - Technology Module: 23+ tests"
           echo "  - Total: 62+ tests"
+          echo "✅ All tests passed for Lua ${{ matrix.lua-version }}!"

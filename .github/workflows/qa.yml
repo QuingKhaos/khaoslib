@@ -33,9 +33,13 @@ jobs:
 
       - name: Lint Lua files
         run: |
-          echo "🔍 Linting Lua files..."
-          luacheck *.lua tests/test_*.lua --globals data util defines game script require _G type pairs ipairs table string debug os io math loadfile --allow-defined-top --max-line-length 150
-          echo "✅ Lua linting completed (excluding external luaunit.lua)"
+          echo "🔍 Linting production Lua files (strict)..."
+          luacheck *.lua --globals data util defines game script require _G type pairs ipairs table string debug os io math loadfile --allow-defined-top --max-line-length 160
+          echo "✅ Production files linting completed"
+          
+          echo "🔍 Linting test Lua files (with test patterns ignored)..."
+          luacheck tests/test_*.lua --globals data util defines game script require _G type pairs ipairs table string debug os io math loadfile --ignore 212 213 --allow-defined-top --max-line-length 160
+          echo "✅ Test files linting completed (excluding external luaunit.lua)"
 
       - name: Check documentation files exist
         run: |

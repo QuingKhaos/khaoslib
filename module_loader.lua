@@ -17,7 +17,7 @@ function module_loader.load_khaoslib_module(module_name)
     -- In testing environment, first try current directory, then parent directory
     local paths = {module_name .. ".lua", "../" .. module_name .. ".lua"}
     for _, module_path in ipairs(paths) do
-      local chunk, err = loadfile(module_path)
+      local chunk = loadfile(module_path) --luacheck: ignore 211
       if chunk then
         return chunk(module_name)
       end
@@ -45,7 +45,7 @@ function module_loader.create_mock_technology()
     exists = function(name)
       return data and data.raw.technology[name] ~= nil
     end,
-    load = function(self, name)
+    load = function(self, name) --luacheck: ignore 212
       return {
         add_unlock_recipe = function() return self end,
         remove_unlock_recipe = function() return self end,

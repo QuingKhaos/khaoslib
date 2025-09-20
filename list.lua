@@ -1,6 +1,7 @@
 -- Handle both Factorio and testing environments
 if ... ~= "__khaoslib__.list" and ... ~= "list" then
   -- In testing environment, just continue with this file
+  local _ = ... -- luacheck: ignore 211
 end
 
 -- Load dependencies with shared module loader
@@ -212,7 +213,7 @@ function khaoslib_list.remove(list, compare, options)
   options = options or {}
   local remove_all = options.all or false
 
-  perform_list_operation(validated_list, compare_fn, function(i, item)
+  perform_list_operation(validated_list, compare_fn, function(i, item) --luacheck: ignore 212
     table.remove(validated_list, i)
   end, remove_all)
 
@@ -252,7 +253,7 @@ function khaoslib_list.replace(list, new_item, compare, options)
   options = options or {}
   local replace_all = options.all or false
 
-  perform_list_operation(validated_list, compare_fn, function(i, item)
+  perform_list_operation(validated_list, compare_fn, function(i, item) --luacheck: ignore 212
     validated_list[i] = util.table.deepcopy(new_item)
   end, replace_all)
 

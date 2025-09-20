@@ -68,7 +68,7 @@ function test_utils.load_module(module_name)
   }
 
   for _, module_path in ipairs(possible_paths) do
-    local chunk, err = loadfile(module_path)
+    local chunk = loadfile(module_path) --luacheck: ignore 211
     if chunk then
       return chunk(module_name)
     end

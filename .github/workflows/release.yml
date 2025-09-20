@@ -142,28 +142,48 @@ jobs:
               category=$(echo "$line" | sed 's/^  \([A-Z][a-zA-Z]*\):$/### \1/')
               echo "$category" >> release_notes.md
             elif [[ $line == "    - "* ]]; then
-              # Feature line - get PR reference from git blame
+              # Feature line - get ALL PR references that modified this line since last release
               feature_text="${line#    - }"
 
-              # Use git blame to find the commit that last modified this line
-              blame_info=$(git blame -L${line_num},${line_num} changelog.txt 2>/dev/null || echo "")
+              # Get the previous release tag
+              PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
-              if [ -n "$blame_info" ]; then
-                # Extract commit hash from blame output
-                commit_hash=$(echo "$blame_info" | awk '{print $1}' | sed 's/^\^//')
+              # Get all commits that modified this specific line since previous release
+              if [ -n "$PREV_TAG" ]; then
+                # Use git log -L to get line history since previous release
+                line_commits=$(git log -L${line_num},${line_num}:changelog.txt --format="%H" ${PREV_TAG}..HEAD 2>/dev/null || echo "")
+              else
+                # For first release, get complete line history from beginning
+                line_commits=$(git log -L${line_num},${line_num}:changelog.txt --format="%H" 2>/dev/null || echo "")
+              fi
 
-                # Get the commit message for this hash
-                commit_msg=$(git log --format=%s -n 1 "$commit_hash" 2>/dev/null || echo "")
+              # Collect all PR references from commits that modified this line
+              pr_refs=""
+              unique_prs=""
 
-                # Extract PR number from commit message
-                pr_ref=$(echo "$commit_msg" | grep -oE '\(#[0-9]+\)' | head -1)
+              for commit_hash in $line_commits; do
+                if [ -n "$commit_hash" ]; then
+                  # Get the commit message for this hash
+                  commit_msg=$(git log --format=%s -n 1 "$commit_hash" 2>/dev/null || echo "")
 
-                if [ -n "$pr_ref" ]; then
-                  echo "- $feature_text $pr_ref" >> release_notes.md
-                  echo "  📎 Line $line_num -> $pr_ref (commit: ${commit_hash:0:7})"
-                else
-                  echo "- $feature_text" >> release_notes.md
+                  # Extract PR number from commit message
+                  pr_ref=$(echo "$commit_msg" | grep -oE '#[0-9]+' | head -1)
+
+                  if [ -n "$pr_ref" ] && [[ ! "$unique_prs" =~ $pr_ref ]]; then
+                    unique_prs="$unique_prs $pr_ref"
+                    if [ -n "$pr_refs" ]; then
+                      pr_refs="$pr_refs, $pr_ref"
+                    else
+                      pr_refs="$pr_ref"
+                    fi
+                    echo "  📎 Line $line_num -> $pr_ref (commit: ${commit_hash:0:7})"
+                  fi
                 fi
+              done
+
+              # Format the changelog entry with all PR references
+              if [ -n "$pr_refs" ]; then
+                echo "- $feature_text ($pr_refs)" >> release_notes.md
               else
                 echo "- $feature_text" >> release_notes.md
               fi

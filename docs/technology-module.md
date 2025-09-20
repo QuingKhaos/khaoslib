@@ -13,6 +13,7 @@ The Technology Module provides a comprehensive, fluent API for manipulating Fact
   - [Prerequisite Management](#prerequisite-management)
   - [Effect Management](#effect-management)
   - [Unlock Recipe Helpers](#unlock-recipe-helpers)
+  - [Science Pack Management](#science-pack-management)
   - [Utility Functions](#utility-functions)
 - [Advanced Examples](#advanced-examples)
 - [Best Practices](#best-practices)
@@ -26,6 +27,7 @@ The Technology Module enables you to:
 - **Create new technologies** from prototype tables
 - **Manage prerequisites** with duplicate prevention
 - **Manipulate effects** including specialized unlock-recipe helpers
+- **Control science pack costs** with full manipulation support
 - **Discover technologies** using custom filter functions
 - **Ensure data safety** with automatic deep copying
 
@@ -485,6 +487,158 @@ Replaces unlock-recipe effects.
 
 - `options` (table, optional): Options with `all` field
 
+### Science Pack Management
+
+Science packs define the research cost of technologies (what science packs and amounts are needed). These methods provide complete control over technology research costs, similar to recipe ingredient management.
+
+#### `tech:get_science_packs()`
+
+Gets all science packs for the technology.
+
+**Returns:**
+
+- `ResearchIngredient[]`: Deep copy of the science pack list
+
+**Examples:**
+
+```lua
+local tech = khaoslib_technology:load("electronics")
+local science_packs = tech:get_science_packs()
+for _, science_pack in ipairs(science_packs) do
+  log("Requires: " .. science_pack[1] .. " x" .. science_pack[2])
+end
+```
+
+#### `tech:set_science_packs(science_packs)`
+
+Sets the science pack list, replacing existing ones.
+
+**Parameters:**
+
+- `science_packs` (ResearchIngredient[]): Array of science packs
+
+**Examples:**
+
+```lua
+tech:set_science_packs({
+  {"automation-science-pack", 1},
+  {"logistic-science-pack", 1}
+})
+```
+
+#### `tech:count_science_packs()`
+
+Gets the number of science packs.
+
+**Returns:**
+
+- `number`: Count of science packs
+
+#### `tech:has_science_pack(compare)`
+
+Checks if technology has a matching science pack.
+
+**Parameters:**
+
+- `compare` (string|function): Science pack name or comparison function
+
+**Returns:**
+
+- `boolean`: True if science pack exists
+
+**Examples:**
+
+```lua
+-- By name
+if tech:has_science_pack("automation-science-pack") then
+  -- Technology requires automation science
+end
+
+-- By comparison function
+if tech:has_science_pack(function(science_pack)
+  return science_pack[2] > 2
+end) then
+  -- Technology has expensive science packs
+end
+```
+
+#### `tech:add_science_pack(science_pack)`
+
+Adds a science pack if it doesn't already exist (prevents duplicates).
+
+**Parameters:**
+
+- `science_pack` (ResearchIngredient): Science pack to add
+
+**Examples:**
+
+```lua
+tech:add_science_pack({"chemical-science-pack", 1})
+```
+
+#### `tech:remove_science_pack(compare, options?)`
+
+Removes matching science packs.
+
+**Parameters:**
+
+- `compare` (string|function): Science pack name or comparison function
+- `options` (table, optional): Options with `all` field
+
+**Examples:**
+
+```lua
+-- Remove by name (first match by default)
+tech:remove_science_pack("military-science-pack")
+
+-- Remove by function (first match by default)
+tech:remove_science_pack(function(science_pack)
+  return science_pack[2] > 3
+end)
+
+-- Remove all matching science packs
+tech:remove_science_pack(function(science_pack)
+  return science_pack[1]:match("%-science%-pack$")
+end, {all = true})
+```
+
+#### `tech:replace_science_pack(old_science_pack, new_science_pack, options?)`
+
+Replaces matching science packs with a new science pack.
+
+**Parameters:**
+
+- `old_science_pack` (string|function): Science pack name or comparison function
+- `new_science_pack` (ResearchIngredient): New science pack to replace with
+- `options` (table, optional): Options with `all` field
+
+**Examples:**
+
+```lua
+-- Replace by name (first match by default)
+tech:replace_science_pack("automation-science-pack", {"automation-science-pack", 2})  -- Double the cost
+
+-- Replace with function (first match by default)
+tech:replace_science_pack(function(science_pack)
+  return science_pack[2] == 1
+end, {"universal-science-pack", 1})
+
+-- Replace all matching science packs
+tech:replace_science_pack(function(science_pack)
+  return science_pack[1]:match("^basic%-")
+end, {"advanced-science-pack", 1}, {all = true})
+```
+
+#### `tech:clear_science_packs()`
+
+Removes all science packs from the technology.
+
+**Examples:**
+
+```lua
+tech:clear_science_packs() -- Technology now costs nothing
+```
+
 ### Utility Functions
 
 #### `khaoslib_technology.exists(technology_name)`
@@ -662,6 +816,98 @@ for _, tech_name in ipairs(high_tier_techs) do
       }
     })
     :commit()
+end
+```
+
+### science pack Management and Rebalancing
+
+```lua
+-- Rebalance science pack costs for difficulty mods
+local expensive_techs = khaoslib_technology.find(function(tech)
+  return tech.unit and tech.unit.count and tech.unit.count > 1000
+end)
+
+for _, tech_name in ipairs(expensive_techs) do
+  local tech = khaoslib_technology:load(tech_name)
+
+  -- Double the cost of expensive science packs (requires manual iteration)
+  local science_packs_to_replace = {}
+  for _, science_pack in ipairs(tech:get_science_packs()) do
+    if science_pack[2] >= 2 then
+      table.insert(science_packs_to_replace, {
+        old = science_pack[1],
+        new = {science_pack[1], science_pack[2] * 2}
+      })
+    end
+  end
+
+  for _, replacement in ipairs(science_packs_to_replace) do
+    tech:replace_science_pack(replacement.old, replacement.new)
+  end
+
+  -- Add premium science requirement for very expensive techs
+  local tech_data = tech:get()
+  if tech_data.unit and tech_data.unit.count and tech_data.unit.count > 5000 then
+    tech:add_science_pack({"space-science-pack", 1})
+  end
+
+  tech:commit()
+end
+
+-- Standardize early game science costs
+local early_techs = khaoslib_technology.find(function(tech)
+  return tech.unit and tech.unit.count and tech.unit.count <= 50
+end)
+
+for _, tech_name in ipairs(early_techs) do
+  khaoslib_technology:load(tech_name)
+    :set_science_packs({{"automation-science-pack", 1}})
+    :set({unit = {count = 30, time = 15}})  -- Standardize cost and time
+    :commit()
+end
+
+-- Add mod integration for science pack overhauls
+if mods["ScienceCostTweakerM"] then
+  -- Replace vanilla science packs with modded equivalents
+  local vanilla_packs = {
+    "automation-science-pack",
+    "logistic-science-pack",
+    "chemical-science-pack",
+    "military-science-pack",
+    "production-science-pack",
+    "utility-science-pack"
+  }
+
+  local modded_packs = {
+    "sct-automation-science-pack",
+    "sct-logistic-science-pack",
+    "sct-chemical-science-pack",
+    "sct-military-science-pack",
+    "sct-production-science-pack",
+    "sct-utility-science-pack"
+  }
+
+  for i, vanilla_pack in ipairs(vanilla_packs) do
+    local modded_pack = modded_packs[i]
+    if data.raw.item[modded_pack] then
+      local affected_techs = khaoslib_technology.find(function(tech)
+        if not (tech.unit and tech.unit.ingredients) then return false end
+        -- Check raw data directly for efficiency
+        for _, science_pack in ipairs(tech.unit.ingredients) do
+          if science_pack[1] == vanilla_pack then
+            return true
+          end
+        end
+        return false
+      end)
+
+      for _, tech_name in ipairs(affected_techs) do
+        khaoslib_technology:load(tech_name)
+          :replace_science_pack(vanilla_pack, {modded_pack, 1})
+          :commit()
+      end
+    end
+  end
 end
 ```
 

@@ -136,6 +136,12 @@ end, {all = true})
   :replace_unlock_recipe("military-item", "science-item")
   :commit()
 
+-- Science pack manipulation
+khaoslib_technology:load("expensive-tech")
+  :add_science_pack({"space-science-pack", 1})
+  :replace_science_pack("automation-science-pack", {"automation-science-pack", 2})
+  :commit()
+
 -- Bulk operations with utility functions
 local military_techs = khaoslib_technology.find(function(tech)
   return tech.name:match("^military%-")
@@ -156,6 +162,7 @@ end
 - **Flexible Loading**: Load existing technologies or create new ones from prototypes
 - **Prerequisite Management**: Add, remove, replace with duplicate prevention (Factorio requirement)
 - **Effect Management**: Full support for all effect types with specialized unlock-recipe functions
+- **Science Pack Control**: Comprehensive science pack cost manipulation (add, remove, replace science packs)
 - **Discovery Utilities**: Find technologies by custom criteria, check existence
 - **Deep Copying**: Ensures data stage safety and prevents reference issues
 - **Comprehensive Validation**: Robust error handling with descriptive messages

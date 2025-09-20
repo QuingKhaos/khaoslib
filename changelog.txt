@@ -18,20 +18,23 @@ Date: ????
     - Provides complete prerequisite management: add, remove, replace, count, and query prerequisites with duplicate prevention.
     - Offers comprehensive effect manipulation: add, remove, replace, count, and query all technology effects.
     - Includes specialized unlock-recipe helpers for common recipe unlocking operations with enhanced API.
-    - Supports both string-based matching (by name) and custom comparison functions for flexible prerequisite/effect filtering.
+    - Provides comprehensive science pack management: add, remove, replace, count, and query science packs with duplicate prevention.
+    - Supports both string-based matching (by name) and custom comparison functions for flexible prerequisite/effect/science pack filtering.
     - Implements utility functions for technology discovery and existence checking across the data stage.
     - Ensures method chaining and fluent API design for readable, maintainable code.
     - Integrates recipe and technology modules with cross-module unlock management functionality.
     - Adds recipe:add_unlock() and recipe:remove_unlock() methods for managing technology unlock relationships directly from recipes.
     - Implements automatic technology state tracking and deferred commit system for recipe-technology integration.
     - Provides deep copy safety across module boundaries with independent technology manipulator instances per recipe.
+    - Ensures consistent API design patterns across all manipulation modules (prerequisites, effects, science packs).
+    - Standardizes terminology throughout documentation and codebase for clarity and maintainability.
   Modding:
     - Establishes comprehensive Lua unit testing infrastructure with LuaUnit framework integration.
     - Implements complete VS Code testing environment with debug configurations, tasks, and extension recommendations.
     - Provides shared testing utilities (test_utils.lua) with mock Factorio environment and helper functions.
     - Creates unified module loading system (module_loader.lua) supporting both Factorio and testing environments.
     - Adds full debugging support with Local Lua Debugger integration, breakpoints, and step-through debugging.
-    - Includes comprehensive test suites for all modules: 48 total tests (30 list tests, 9 recipe tests, 9 technology tests).
+    - Includes comprehensive test suites for all modules: 62+ total tests (30 list tests, 9 recipe tests, 23 technology tests).
     - Provides VS Code tasks for test execution: Run All Tests, Run Current Test, and module-specific test runners.
     - Implements dual-environment module loading with automatic environment detection for seamless testing.
     - Establishes testing documentation (TESTING_SETUP.md) and debugging guide (DEBUGGING.md) for contributors.

@@ -30,6 +30,7 @@ local util = module_loader.load_util()
 --- Key features:
 --- - Prerequisites prevent duplicates (Factorio requirement)
 --- - Effects allow duplicates with specialized handling functions
+--- - Science pack cost manipulation with comprehensive control
 --- - Comprehensive validation and error handling
 --- - Method chaining for fluent API design
 --- - Deep copying ensures data stage safety
@@ -91,6 +92,33 @@ local util = module_loader.load_util()
 ---   tech:replace_prerequisite("old-tech", "new-tech")
 --- end
 ---
+--- -- Science pack cost manipulation
+--- local tech = khaoslib_technology:load("expensive-research")
+--- tech:add_science_pack({type = "item", name = "space-science-pack", amount = 1})
+---   :replace_science_pack("automation-science-pack", {
+---     type = "item", name = "automation-science-pack", amount = 2
+---   })
+---   :remove_science_pack(function(ingredient)
+---     return ingredient.name:match("^military%-")
+---   end, {all = true})
+---   :commit()
+---
+--- -- Rebalance all technologies for difficulty mod
+--- local all_techs = khaoslib_technology.find(function(tech)
+---   return tech.unit and tech.unit.ingredients
+--- end)
+--- for _, tech_name in ipairs(all_techs) do
+---   khaoslib_technology:load(tech_name)
+---     :replace_science_pack(function(ingredient)
+---       return ingredient.amount == 1
+---     end, function(ingredient)
+---       local new_ingredient = util.table.deepcopy(ingredient)
+---       new_ingredient.amount = 2  -- Double all single-pack costs
+---       return new_ingredient
+---     end, {all = true})
+---     :commit()
+--- end
+---
 --- -- Bulk technology cleanup
 --- local deprecated_techs = {"old-tech-1", "old-tech-2", "old-tech-3"}
 --- for _, technology in ipairs(deprecated_techs) do
@@ -150,14 +178,14 @@ function khaoslib_technology:load(technology)
   return obj
 end
 
---- Gets the raw data table of the technology currently being manipulated.
---- @return data.TechnologyPrototype technology A deep copy of the technology currently being manipulated.
+--- Gets the raw data table of the technology.
+--- @return data.TechnologyPrototype technology A deep copy of the technology data.
 --- @nodiscard
 function khaoslib_technology:get()
   return util.table.deepcopy(self.technology) --[[@as data.TechnologyPrototype]]
 end
 
---- Merges the given fields into the technology currently being manipulated.
+--- Merges the given fields into the technology.
 --- @param fields table A table of fields to merge into the technology. See `data.TechnologyPrototype` for valid fields.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
@@ -171,7 +199,7 @@ function khaoslib_technology:set(fields)
   return self
 end
 
---- Creates a deep copy of the technology currently being manipulated.
+--- Creates a deep copy of the technology.
 --- @param new_name data.TechnologyID The name of the new technology. Must not already exist.
 --- @return khaoslib.TechnologyManipulator technology A new technology manipulation object with a deep copy of the technology.
 --- @throws If a technology with the new name already exists.
@@ -183,7 +211,7 @@ function khaoslib_technology:copy(new_name)
   return khaoslib_technology:load(copy)
 end
 
---- Commits the changes made to the technology currently being manipulated back to the data stage.
+--- Commits the changes to the data stage.
 --- If the technology already exists, it is overwritten.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:commit()
@@ -192,7 +220,7 @@ function khaoslib_technology:commit()
   return self
 end
 
---- Deletes the technology currently being manipulated from the data stage.
+--- Deletes the technology from the data stage.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:remove()
   data.raw.technology[self.technology.name] = nil
@@ -234,7 +262,7 @@ end
 --#region Technology manipulation methods
 -- A set of utility functions for manipulating technologies.
 
---- Returns a list of all prerequisite technologies for the technology currently being manipulated.
+--- Returns a list of all prerequisite technologies.
 --- @return data.TechnologyID[] prerequisites A list of prerequisite technology names.
 function khaoslib_technology:get_prerequisites()
   return util.table.deepcopy(self.technology.prerequisites or {})
@@ -620,6 +648,206 @@ function khaoslib_technology:replace_unlock_recipe(old_recipe, new_recipe, optio
     {type = "unlock-recipe", recipe = new_recipe},
     replace_options
   )
+end
+
+--- Returns a list of all science packs for the technology.
+--- @return data.ResearchIngredient[] science_packs A deep copy of the science packs.
+function khaoslib_technology:get_science_packs()
+  if not self.technology.unit or not self.technology.unit.ingredients then
+    return {}
+  end
+
+  return util.table.deepcopy(self.technology.unit.ingredients)
+end
+
+--- Sets the science pack list, replacing existing ones.
+--- @param science_packs data.ResearchIngredient[] A list of science packs to set.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If science_packs is not a table.
+function khaoslib_technology:set_science_packs(science_packs)
+  if type(science_packs) ~= "table" then error("science_packs parameter: Expected table, got " .. type(science_packs), 2) end
+
+  if not self.technology.unit then
+    self.technology.unit = {}
+  end
+
+  self.technology.unit.ingredients = util.table.deepcopy(science_packs)
+
+  return self
+end
+
+--- Returns the number of science packs for the technology currently being manipulated.
+--- @return integer count The number of science packs.
+function khaoslib_technology:count_science_packs()
+  if not self.technology.unit or not self.technology.unit.ingredients then
+    return 0
+  end
+
+  return #self.technology.unit.ingredients
+end
+
+--- Checks if the technology has a science pack matching the given criteria.
+--- Supports both string matching (by science pack name) and custom comparison functions.
+---
+--- ```lua
+--- -- By name (string)
+--- if tech:has_science_pack("automation-science-pack") then
+---   -- Technology requires automation science packs
+--- end
+---
+--- -- By comparison function
+--- if tech:has_science_pack(function(ingredient)
+---   return ingredient.name:match("%-military%-science%-pack$")
+--- end) then
+---   -- Technology requires military science
+--- end
+--- ```
+---
+--- @param compare function|string A comparison function or science pack name to match.
+--- @return boolean has_science_pack True if the technology has the science pack, false otherwise.
+--- @throws If compare is not a string or function.
+function khaoslib_technology:has_science_pack(compare)
+  local compare_fn
+  if type(compare) == "string" then
+    compare_fn = function(ingredient) return ingredient[1] == compare end
+  elseif type(compare) == "function" then
+    compare_fn = compare
+  else
+    error("compare parameter: Expected string or function, got " .. type(compare), 2)
+  end
+
+  if not self.technology.unit or not self.technology.unit.ingredients then
+    return false
+  end
+
+  return khaoslib_list.has(self.technology.unit.ingredients, compare_fn)
+end
+
+--- Adds a science pack to the technology currently being manipulated if it doesn't already exist.
+--- science packs cannot have duplicates (Factorio requirement).
+--- @param science_pack data.ResearchIngredient The science pack to add.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If science_pack is not a table or doesn't have a name field.
+function khaoslib_technology:add_science_pack(science_pack)
+  if type(science_pack) ~= "table" then error("science_pack parameter: Expected table, got " .. type(science_pack), 2) end
+  if not science_pack[1] then error("science_pack parameter: Missing science pack name at index 1", 2) end
+  if not science_pack[2] then error("science_pack parameter: Missing science pack amount at index 2", 2) end
+
+  if not self.technology.unit then
+    self.technology.unit = {}
+  end
+
+  self.technology.unit.ingredients = khaoslib_list.add(self.technology.unit.ingredients, science_pack, function(existing)
+    return existing[1] == science_pack[1]
+  end)
+
+  return self
+end
+
+--- Removes matching science packs from the technology.
+---
+--- ```lua
+--- -- By name (string) - removes first match by default
+--- tech:remove_science_pack("automation-science-pack")
+---
+--- -- By comparison function - removes first match by default
+--- tech:remove_science_pack(function(ingredient)
+---   return ingredient.name:match("^military%-")
+--- end)
+---
+--- -- Remove all matching science packs
+--- tech:remove_science_pack(function(ingredient)
+---   return ingredient.amount > 5
+--- end, {all = true})
+--- ```
+---
+--- @param compare function|string A comparison function or science pack name to match.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching science packs instead of just the first.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_technology:remove_science_pack(compare, options)
+  local compare_fn
+  if type(compare) == "string" then
+    compare_fn = function(ingredient) return ingredient[1] == compare end
+  elseif type(compare) == "function" then
+    compare_fn = compare
+  else
+    error("compare parameter: Expected string or function, got " .. type(compare), 2)
+  end
+
+  if not self.technology.unit or not self.technology.unit.ingredients then
+    return self
+  end
+
+  options = options or {}
+  local remove_options = {all = options.all or false}
+
+  self.technology.unit.ingredients = khaoslib_list.remove(self.technology.unit.ingredients, compare_fn, remove_options)
+
+  return self
+end
+
+--- Replaces matching science packs with a new science pack.
+--- If no matching science packs are found, no changes are made.
+---
+--- ```lua
+--- -- Replace by name (string parameter) - replaces first match by default
+--- tech:replace_science_pack("automation-science-pack", {
+---   type = "item",
+---   name = "automation-science-pack",
+---   amount = 2
+--- })
+---
+--- -- Replace with custom function (function parameter) - replaces first match by default
+--- tech:replace_science_pack(function(ingredient)
+---   return ingredient.name:match("^basic%-")
+--- end, {type = "item", name = "advanced-science-pack", amount = 1})
+---
+--- -- Replace all matching science packs
+--- tech:replace_science_pack(function(science_pack)
+---   return science_pack.amount == 1
+--- end, {type = "item", name = "universal-science-pack", amount = 2}, {all = true})
+--- ```
+---
+--- @param old_science_pack function|string A comparison function or science pack name to match.
+--- @param new_science_pack data.ResearchIngredient The new science pack to replace with.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching science packs instead of just the first.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If old_science_pack is not a string or function, or new_science_pack is not a table.
+function khaoslib_technology:replace_science_pack(old_science_pack, new_science_pack, options)
+  local compare_fn
+  if type(old_science_pack) == "string" then
+    compare_fn = function(ingredient) return ingredient[1] == old_science_pack end
+  elseif type(old_science_pack) == "function" then
+    compare_fn = old_science_pack
+  else
+    error("old_science_pack parameter: Expected string or function, got " .. type(old_science_pack), 2)
+  end
+
+  if type(new_science_pack) ~= "table" then error("new_science_pack parameter: Expected table, got " .. type(new_science_pack), 2) end
+
+  if not self.technology.unit or not self.technology.unit.ingredients then
+    return self
+  end
+
+  options = options or {}
+  local replace_options = {all = options.all or false}
+
+  self.technology.unit.ingredients = khaoslib_list.replace(self.technology.unit.ingredients, new_science_pack, compare_fn, replace_options)
+
+  return self
+end
+
+--- Removes all science packs from the technology currently being manipulated.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+function khaoslib_technology:clear_science_packs()
+  if not self.technology.unit then
+    self.technology.unit = {}
+  end
+
+  self.technology.unit.ingredients = {}
+
+  return self
 end
 
 --#endregion

@@ -232,7 +232,7 @@ print("Package path:", package.path)
 
 **Symptoms**:
 
-```plaintext
+```text
 attempt to index a nil value (global 'data')
 ```
 

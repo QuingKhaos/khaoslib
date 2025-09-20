@@ -12,8 +12,8 @@
     "allowed_languages": [
       "bash",
       "lua",
-      "plaintext",
-      "powershell"
+      "powershell",
+      "text"
     ],
     "language_only": true
   },

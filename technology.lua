@@ -8,12 +8,40 @@ local util = require("util")
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with technology manipulation objects.
 
---- Utilities for technology manipulation in Factorio data stage.
+--- Technology manipulation utilities for Factorio data stage.
+---
+--- This module provides a fluent API for creating, modifying, and managing technology prototypes
+--- during the data stage. It supports method chaining and uses the list utility module for
+--- consistent prerequisite and effect manipulation.
+---
+--- Key features:
+--- - Prerequisites prevent duplicates (Factorio requirement)
+--- - Effects allow duplicates with specialized handling functions
+--- - Comprehensive validation and error handling
+--- - Method chaining for fluent API design
+--- - Deep copying ensures data stage safety
+--- - Options tables for extensible parameters
+--- - 'all' option support for bulk operations
+--- - Flexible comparison functions for advanced matching
+---
+--- ## Basic Usage Examples
+---
 --- ```lua
 --- local khaoslib_technology = require("__khaoslib__.technology")
 ---
 --- -- Load an existing technology for manipulation
---- khaoslib_technology:load("electronics"):add_prerequisite("solder"):add_unlock_recipe("electronic-circuit-with-solder"):commit()
+--- khaoslib_technology:load("electronics")
+---   :copy("electronics-with-solder")
+---   :add_prerequisite("solder-tech")
+---   :add_unlock_recipe("electronic-circuit-with-solder")
+---   :commit()
+---
+--- -- Working with bulk operations
+--- local tech = khaoslib_technology:load("advanced-electronics")
+--- tech:remove_prerequisite(function(prereq)
+---   return prereq:match("^basic%-")
+--- end, {all = true}) -- removes all basic prerequisites
+--- tech:replace_unlock_recipe("old-recipe", "new-recipe", {all = true})
 ---
 --- -- Create a new technology from scratch
 --- khaoslib_technology:load {
@@ -26,6 +54,50 @@ local util = require("util")
 ---   -- other fields here
 --- }:commit()
 --- ```
+---
+--- ## Advanced Examples
+---
+--- ```lua
+--- -- Complex prerequisite manipulation
+--- local tech = khaoslib_technology:load("example")
+--- tech:remove_prerequisite(function(prereq)
+---   return prereq:match("^military%-") and not prereq:match("%-science%-")
+--- end, {all = true})
+---   :add_prerequisite("peaceful-research")
+---   :commit()
+---
+--- -- Working with complex effect manipulation
+--- tech:remove_effect(function(effect)
+---   return effect.type == "unlock-recipe" and
+---     data.raw.recipe[effect.recipe] and
+---     data.raw.recipe[effect.recipe].category == "chemistry"
+--- end, {all = true})
+---
+--- -- Conditional technology replacement
+--- if tech:has_prerequisite("old-tech") then
+---   tech:replace_prerequisite("old-tech", "new-tech")
+--- end
+---
+--- -- Bulk technology cleanup
+--- local deprecated_techs = {"old-tech-1", "old-tech-2", "old-tech-3"}
+--- for _, technology in ipairs(deprecated_techs) do
+---   if khaoslib_technology.exists(technology) then
+---     khaoslib_technology:load(technology)
+---       :remove_effect(function(e) return e.type == "unlock-recipe" end, {all = true})
+---       :add_effect({type = "nothing", effect_description = "Technology deprecated"})
+---       :commit()
+---   end
+--- end
+--- ```
+---
+--- ## Performance Notes
+---
+--- - All operations use deep copying to ensure data stage safety
+--- - Method chaining is efficient - intermediate states are not committed
+--- - Use `has_prerequisite()` and `has_effect()` before expensive operations
+--- - Bulk operations are more efficient than individual commits
+--- - Function comparisons enable powerful but potentially expensive matching
+---
 --- @class khaoslib.TechnologyManipulator
 --- @field private technology data.TechnologyPrototype The technology currently being manipulated.
 --- @operator add(khaoslib.TechnologyManipulator): khaoslib.TechnologyManipulator
@@ -36,15 +108,20 @@ local khaoslib_technology = {}
 --- @return khaoslib.TechnologyManipulator manipulator A technology manipulation object for the given technology.
 --- @throws If the technology name doesn't exist or if a table is passed with a name that already exists or without a valid name field.
 function khaoslib_technology:load(technology)
-  if type(technology) ~= "string" and type(technology) ~= "table" then error("technology parameter: Expected string or table , got " .. type(technology), 2) end
-  if type(technology) == "string" and not data.raw.technology[technology] then error("No such technology: " .. technology, 2) end
-  if type(technology) == "table" and technology.type and type(technology.type) ~= "string" then error("technology table type field should be a string if set", 2) end
-  if type(technology) == "table" and technology.type and technology.type ~= "technology" then error("technology table type field should be 'technology' if set", 2) end
-  if type(technology) == "table" and (not technology.name or type(technology.name) ~= "string") then error("technology table must have a name field of type string", 2) end
-  if type(technology) == "table" and data.raw.technology[technology.name] then error("A technology with the name " .. technology.name .. " already exists", 2) end
+  local tech_type = type(technology)
+  if tech_type ~= "string" and tech_type ~= "table" then error("technology parameter: Expected string or table , got " .. tech_type, 2) end
+  
+  if tech_type == "string" then
+    if not khaoslib_technology.exists(technology) then error("No such technology: " .. technology, 2) end
+  else -- tech_type == "table"
+    if technology.type and type(technology.type) ~= "string" then error("technology table type field should be a string if set", 2) end
+    if technology.type and technology.type ~= "technology" then error("technology table type field should be 'technology' if set", 2) end
+    if not technology.name or type(technology.name) ~= "string" then error("technology table must have a name field of type string", 2) end
+    if khaoslib_technology.exists(technology.name) then error("A technology with the name " .. technology.name .. " already exists", 2) end
+  end
 
   local _technology = technology
-  if type(technology) == "string" then
+  if tech_type == "string" then
     _technology = util.table.deepcopy(data.raw.technology[technology])
   else
     _technology = util.table.deepcopy(technology)
@@ -168,14 +245,37 @@ function khaoslib_technology:count_prerequisites()
   return #(self.technology.prerequisites or {})
 end
 
---- Returns `true` if the technology currently being manipulated has the given prerequisite.
---- @param prerequisite data.TechnologyID The name of the prerequisite technology to check for.
+--- Checks if the technology has a prerequisite matching the given criteria.
+--- Supports both string matching (by prerequisite name) and custom comparison functions.
+---
+--- ```lua
+--- -- By name (string)
+--- if tech:has_prerequisite("electronics") then
+---   -- Technology requires electronics
+--- end
+---
+--- -- By comparison function
+--- if tech:has_prerequisite(function(prereq)
+---   return prereq:match("^advanced%-")
+--- end) then
+---   -- Technology has advanced prerequisites
+--- end
+--- ```
+---
+--- @param compare function|string A comparison function or prerequisite name to match.
 --- @return boolean has_prerequisite True if the technology has the prerequisite, false otherwise.
---- @throws If prerequisite is not a string.
-function khaoslib_technology:has_prerequisite(prerequisite)
-  if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
+--- @throws If compare is not a string or function.
+function khaoslib_technology:has_prerequisite(compare)
+  local compare_fn
+  if type(compare) == "string" then
+    compare_fn = function(prereq) return prereq == compare end
+  elseif type(compare) == "function" then
+    compare_fn = compare
+  else
+    error("compare parameter: Expected string or function, got " .. type(compare), 2)
+  end
 
-  return khaoslib_list.has(self.technology.prerequisites, prerequisite)
+  return khaoslib_list.has(self.technology.prerequisites, compare_fn)
 end
 
 --- Adds a prerequisite to the technology currently being manipulated if it doesn't already exist.
@@ -190,29 +290,84 @@ function khaoslib_technology:add_prerequisite(prerequisite)
   return self
 end
 
---- Removes a prerequisite from the technology currently being manipulated if it exists.
---- @param prerequisite data.TechnologyID The name of the prerequisite technology to remove.
+--- Removes matching prerequisites from the technology.
+---
+--- ```lua
+--- -- By name (string) - removes first match by default
+--- tech:remove_prerequisite("electronics")
+---
+--- -- By comparison function - removes first match by default
+--- tech:remove_prerequisite(function(prereq)
+---   return prereq:match("^advanced%-")
+--- end)
+---
+--- -- Remove all matching prerequisites
+--- tech:remove_prerequisite(function(prereq)
+---   return prereq:match("^basic%-")
+--- end, {all = true})
+--- ```
+---
+--- @param compare function|string A comparison function or prerequisite name to match.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching prerequisites instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If prerequisite is not a string.
-function khaoslib_technology:remove_prerequisite(prerequisite)
-  if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
+--- @throws If compare is not a string or function.
+function khaoslib_technology:remove_prerequisite(compare, options)
+  local compare_fn
+  if type(compare) == "string" then
+    compare_fn = function(prereq) return prereq == compare end
+  elseif type(compare) == "function" then
+    compare_fn = compare
+  else
+    error("compare parameter: Expected string or function, got " .. type(compare), 2)
+  end
 
-  self.technology.prerequisites = khaoslib_list.remove(self.technology.prerequisites, prerequisite)
+  options = options or {}
+  local remove_options = {all = options.all or false}
+
+  self.technology.prerequisites = khaoslib_list.remove(self.technology.prerequisites, compare_fn, remove_options)
 
   return self
 end
 
---- Replaces an existing prerequisite in the technology currently being manipulated with a new prerequisite.
---- If no matching prerequisite is found, no changes are made.
---- @param old_prerequisite data.TechnologyID The name of the prerequisite technology to replace.
---- @param new_prerequisite data.TechnologyID The name of the new prerequisite technology to add.
+--- Replaces matching prerequisites with a new prerequisite.
+--- If no matching prerequisites are found, no changes are made.
+---
+--- ```lua
+--- -- Replace by name (string parameter) - replaces first match by default
+--- tech:replace_prerequisite("electronics", "advanced-electronics")
+---
+--- -- Replace with custom function (function parameter) - replaces first match by default
+--- tech:replace_prerequisite(function(prereq)
+---   return prereq:match("^basic%-")
+--- end, "electronics")
+---
+--- -- Replace all matching prerequisites
+--- tech:replace_prerequisite(function(prereq)
+---   return prereq:match("^old%-")
+--- end, "new-base-tech", {all = true})
+--- ```
+---
+--- @param old_prerequisite function|string A comparison function or prerequisite name to match.
+--- @param new_prerequisite data.TechnologyID The new prerequisite technology name to replace with.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching prerequisites instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If old_prerequisite or new_prerequisite is not a string.
-function khaoslib_technology:replace_prerequisite(old_prerequisite, new_prerequisite)
-  if type(old_prerequisite) ~= "string" then error("old_prerequisite parameter: Expected string, got " .. type(old_prerequisite), 2) end
+--- @throws If old_prerequisite is not a string or function, or new_prerequisite is not a string.
+function khaoslib_technology:replace_prerequisite(old_prerequisite, new_prerequisite, options)
+  local compare_fn
+  if type(old_prerequisite) == "string" then
+    compare_fn = function(prereq) return prereq == old_prerequisite end
+  elseif type(old_prerequisite) == "function" then
+    compare_fn = old_prerequisite
+  else
+    error("old_prerequisite parameter: Expected string or function, got " .. type(old_prerequisite), 2)
+  end
+
   if type(new_prerequisite) ~= "string" then error("new_prerequisite parameter: Expected string, got " .. type(new_prerequisite), 2) end
 
-  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, new_prerequisite, old_prerequisite)
+  options = options or {}
+  local replace_options = {all = options.all or false}
+
+  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, new_prerequisite, compare_fn, replace_options)
 
   return self
 end
@@ -272,29 +427,63 @@ function khaoslib_technology:add_effect(effect)
   return self
 end
 
---- Removes the first effect from the technology currently being manipulated that matches the given comparison function.
+--- Removes matching effects from the technology.
+---
+--- ```lua
+--- -- Remove first matching effect (default behavior)
+--- tech:remove_effect(function(effect)
+---   return effect.type == "unlock-recipe" and effect.recipe == "old-recipe"
+--- end)
+---
+--- -- Remove all matching effects
+--- tech:remove_effect(function(effect)
+---   return effect.type == "unlock-recipe" and effect.recipe:match("^deprecated%-")
+--- end, {all = true})
+--- ```
+---
 --- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it should be removed.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If compare_fn is not a function.
-function khaoslib_technology:remove_effect(compare_fn)
+function khaoslib_technology:remove_effect(compare_fn, options)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
-  self.technology.effects = khaoslib_list.remove(self.technology.effects, compare_fn)
+  options = options or {}
+  local remove_options = {all = options.all or false}
+
+  self.technology.effects = khaoslib_list.remove(self.technology.effects, compare_fn, remove_options)
 
   return self
 end
 
---- Replaces the first effect in the technology currently being manipulated that matches the given comparison function with a new effect.
---- If no matching effect is found, no changes are made.
+--- Replaces matching effects with a new effect.
+--- If no matching effects are found, no changes are made.
+---
+--- ```lua
+--- -- Replace first matching effect (default behavior)
+--- tech:replace_effect(function(effect)
+---   return effect.type == "unlock-recipe" and effect.recipe == "old-recipe"
+--- end, {type = "unlock-recipe", recipe = "new-recipe"})
+---
+--- -- Replace all matching effects
+--- tech:replace_effect(function(effect)
+---   return effect.type == "unlock-recipe" and effect.recipe:match("^deprecated%-")
+--- end, {type = "nothing", effect_description = "Removed deprecated recipe"}, {all = true})
+--- ```
+---
 --- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it should be replaced.
 --- @param new_effect data.Modifier The new effect to add. See `data.Modifier` for valid effect types.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If compare_fn is not a function or if new_effect is not a table.
-function khaoslib_technology:replace_effect(compare_fn, new_effect)
+function khaoslib_technology:replace_effect(compare_fn, new_effect, options)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
   if type(new_effect) ~= "table" then error("new_effect parameter: Expected table, got " .. type(new_effect), 2) end
 
-  self.technology.effects = khaoslib_list.replace(self.technology.effects, new_effect, compare_fn)
+  options = options or {}
+  local replace_options = {all = options.all or false}
+
+  self.technology.effects = khaoslib_list.replace(self.technology.effects, new_effect, compare_fn, replace_options)
 
   return self
 end
@@ -305,6 +494,36 @@ function khaoslib_technology:clear_effects()
   self.technology.effects = {}
 
   return self
+end
+
+--- Gets all recipes unlocked by the technology currently being manipulated.
+--- @return data.RecipeID[] recipe_names A list of recipe names unlocked by this technology.
+function khaoslib_technology:get_unlock_recipes()
+  local result = {}
+  if self.technology.effects then
+    for _, effect in ipairs(self.technology.effects) do
+      if effect.type == "unlock-recipe" and effect.recipe then
+        table.insert(result, effect.recipe)
+      end
+    end
+  end
+
+  return util.table.deepcopy(result)
+end
+
+--- Returns the number of unlock-recipe effects in the technology currently being manipulated.
+--- @return integer count The number of unlock-recipe effects.
+function khaoslib_technology:count_unlock_recipes()
+  local count = 0
+  if self.technology.effects then
+    for _, effect in ipairs(self.technology.effects) do
+      if effect.type == "unlock-recipe" then
+        count = count + 1
+      end
+    end
+  end
+
+  return count
 end
 
 --- Returns `true` if the technology currently being manipulated has an "unlock-recipe" effect for the given recipe.
@@ -335,32 +554,89 @@ function khaoslib_technology:add_unlock_recipe(recipe, modifier)
   return self:add_effect(modifier)
 end
 
---- Removes an "unlock-recipe" effect from the technology currently being manipulated.
+--- Removes matching "unlock-recipe" effects from the technology.
+---
+--- ```lua
+--- -- Remove by name (string parameter) - removes first match by default
+--- tech:remove_unlock_recipe("deprecated-recipe")
+---
+--- -- Remove all matching unlock effects for a recipe
+--- tech:remove_unlock_recipe("recipe-with-duplicates", {all = true})
+--- ```
+---
 --- @param recipe data.RecipeID The name of the recipe to remove.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching unlock-recipe effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If recipe is not a string.
-function khaoslib_technology:remove_unlock_recipe(recipe)
+function khaoslib_technology:remove_unlock_recipe(recipe, options)
   if type(recipe) ~= "string" then error("recipe parameter: Expected string, got " .. type(recipe), 2) end
+
+  options = options or {}
+  local remove_options = {all = options.all or false}
 
   return self:remove_effect(function(effect)
     return effect.type == "unlock-recipe" and effect.recipe == recipe
-  end)
+  end, remove_options)
 end
 
---- Replaces an existing "unlock-recipe" effect in the technology currently being manipulated with a new recipe.
---- If no matching effect is found, no changes are made.
+--- Replaces matching "unlock-recipe" effects with a new recipe.
+--- If no matching effects are found, no changes are made.
+---
+--- ```lua
+--- -- Replace by name (string parameter) - replaces first match by default
+--- tech:replace_unlock_recipe("old-recipe", "new-recipe")
+---
+--- -- Replace all matching unlock effects for a recipe
+--- tech:replace_unlock_recipe("recipe-with-duplicates", "replacement-recipe", {all = true})
+--- ```
+---
 --- @param old_recipe data.RecipeID The name of the recipe to replace.
 --- @param new_recipe data.RecipeID The name of the new recipe to unlock.
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching unlock-recipe effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If old_recipe or new_recipe is not a string.
-function khaoslib_technology:replace_unlock_recipe(old_recipe, new_recipe)
+function khaoslib_technology:replace_unlock_recipe(old_recipe, new_recipe, options)
   if type(old_recipe) ~= "string" then error("old_recipe parameter: Expected string, got " .. type(old_recipe), 2) end
   if type(new_recipe) ~= "string" then error("new_recipe parameter: Expected string, got " .. type(new_recipe), 2) end
 
+  options = options or {}
+  local replace_options = {all = options.all or false}
+
   return self:replace_effect(
     function(effect) return effect.type == "unlock-recipe" and effect.recipe == old_recipe end,
-    {type = "unlock-recipe", recipe = new_recipe}
+    {type = "unlock-recipe", recipe = new_recipe},
+    replace_options
   )
+end
+
+--#endregion
+
+--#region Utility functions
+-- Module-level utility functions for technology discovery and analysis.
+
+--- Checks if a technology exists in the data stage.
+--- @param technology_name data.TechnologyID The technology name to check.
+--- @return boolean exists True if the technology exists, false otherwise.
+function khaoslib_technology.exists(technology_name)
+  if type(technology_name) ~= "string" then error("technology_name parameter: Expected string, got " .. type(technology_name), 2) end
+
+  return data.raw.technology[technology_name] ~= nil
+end
+
+--- Finds all technologies that match a custom filter function.
+--- @param filter_fn fun(technology: data.TechnologyPrototype): boolean A function that returns true for technologies to include.
+--- @return data.TechnologyID[] technologies A list of technology names that match the filter.
+--- @throws If filter_fn is not a function.
+function khaoslib_technology.find(filter_fn)
+  if type(filter_fn) ~= "function" then error("filter_fn parameter: Expected function, got " .. type(filter_fn), 2) end
+
+  local result = {}
+  for _, technology in pairs(data.raw.technology or {}) do
+    if filter_fn(technology) then
+      table.insert(result, technology.name)
+    end
+  end
+  return result
 end
 
 --#endregion

@@ -99,6 +99,66 @@ Utilities for working with Factorio sprites and graphics.
 local khaoslib_sprites = require("__khaoslib__.sprites")
 ```
 
+### Technology Module
+
+Comprehensive API for manipulating Factorio technology prototypes during the data stage with method chaining, deep copying, and robust error handling.
+
+```lua
+local khaoslib_technology = require("__khaoslib__.technology")
+
+-- Modify existing technology
+khaoslib_technology:load("electronics")
+  :add_prerequisite("basic-tech")
+  :add_unlock_recipe("electronic-circuit-advanced")
+  :set({unit = {count = 100, time = 30}})
+  :commit()
+
+-- Create new technology from scratch
+khaoslib_technology:load({
+  name = "advanced-electronics",
+  icon = "__mymod__/graphics/technology/advanced-electronics.png",
+  prerequisites = {"electronics", "steel-processing"},
+  effects = {
+    {type = "unlock-recipe", recipe = "advanced-circuit"}
+  },
+  unit = {count = 200, time = 45}
+}):commit()
+
+-- Complex prerequisite and effect manipulation
+local tech = khaoslib_technology:load("military-science-pack")
+tech:remove_prerequisite(function(prereq)
+  return prereq:match("^military%-") and not prereq:match("%-science%-")
+end, {all = true})
+  :add_prerequisite("peaceful-research")
+  :replace_unlock_recipe("military-item", "science-item")
+  :commit()
+
+-- Bulk operations with utility functions
+local military_techs = khaoslib_technology.find(function(tech)
+  return tech.name:match("^military%-")
+end)
+
+for _, tech_name in ipairs(military_techs) do
+  if khaoslib_technology.exists(tech_name) then
+    khaoslib_technology:load(tech_name)
+      :add_prerequisite("peace-treaty")
+      :commit()
+  end
+end
+```
+
+**Key Features:**
+
+- **Method Chaining**: Fluent API design for readable technology modifications
+- **Flexible Loading**: Load existing technologies or create new ones from prototypes
+- **Prerequisite Management**: Add, remove, replace with duplicate prevention (Factorio requirement)
+- **Effect Management**: Full support for all effect types with specialized unlock-recipe functions
+- **Discovery Utilities**: Find technologies by custom criteria, check existence
+- **Deep Copying**: Ensures data stage safety and prevents reference issues
+- **Comprehensive Validation**: Robust error handling with descriptive messages
+
+**[📖 Full Technology Module Documentation](docs/technology-module.md)**
+
 ## Stability guarantee
 
 khaoslib follows [Semantic Versioning](https://semver.org/). Thus any 0.x API should not be considered stable. I will do my best to avoid breaking changes in minor releases, but if a breaking change is necessary it will be documented in the changelog.

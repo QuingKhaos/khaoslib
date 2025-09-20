@@ -7,10 +7,6 @@ Date: ????
     - Implements options table support in list module: allow_duplicates for add operations, all parameter for remove/replace operations.
     - Provides extensive error handling with descriptive messages for invalid parameters and edge cases.
     - Ensures deep copying integration throughout all add/replace operations for data stage safety.
-    - Exposes a technology manipulation object to create, load, modify, and commit technology prototypes.
-    - Adds functions to manipulate technology prerequisites.
-    - Adds functions to manipulate technology effects.
-    - Adds functions to manipulate recipe unlocks as a specific type of technology effect.
     - Exposes a recipe manipulation object to create, load, modify, and commit recipe prototypes with fluent API and method chaining.
     - Adds comprehensive ingredient manipulation: add, remove, replace, and query ingredients with duplicate prevention.
     - Adds advanced result manipulation: add, remove, replace, count, and query results with full duplicate support.
@@ -18,6 +14,13 @@ Date: ????
     - Provides options tables for extensible parameters (e.g., all flag for bulk operations on matching items).
     - Includes deep copying throughout for data stage safety and prevents accidental shared state modification.
     - Offers comprehensive validation and error handling with descriptive error messages.
+    - Exposes a technology manipulation module with comprehensive fluent API for creating, loading, modifying, and committing technology prototypes.
+    - Provides complete prerequisite management: add, remove, replace, count, and query prerequisites with duplicate prevention.
+    - Offers comprehensive effect manipulation: add, remove, replace, count, and query all technology effects.
+    - Includes specialized unlock-recipe helpers for common recipe unlocking operations with enhanced API.
+    - Supports both string-based matching (by name) and custom comparison functions for flexible prerequisite/effect filtering.
+    - Implements utility functions for technology discovery and existence checking across the data stage.
+    - Ensures method chaining and fluent API design for readable, maintainable code.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

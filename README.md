@@ -1,4 +1,9 @@
-[![Factorio Mod Portal page](https://img.shields.io/badge/dynamic/json?color=orange&label=Factorio&query=downloads_count&suffix=%20downloads&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fkhaoslib&style=for-the-badge)](https://mods.factorio.com/mod/khaoslib) [![](https://img.shields.io/github/issues/QuingKhaos/khaoslib/bug?label=Bug%20Reports&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug) [![](https://img.shields.io/github/issues-pr/QuingKhaos/khaoslib?label=Pull%20Requests&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/pulls) [![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-hotpink?logo=kofi&logoColor=white&style=for-the-badge)](https://ko-fi.com/quingkhaos)
+[![Factorio mod portal page](https://img.shields.io/badge/dynamic/json?color=orange&label=Factorio&query=downloads_count&suffix=%20downloads&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fkhaoslib&style=for-the-badge)](https://mods.factorio.com/mod/khaoslib)
+[![GitHub build status: CI](https://img.shields.io/github/actions/workflow/status/QuingKhaos/khaoslib/ci.yml?branch=main&label=CI&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/actions?query=workflow%3ACI)
+[![GitHub build status: Quality Assurance](https://img.shields.io/github/actions/workflow/status/QuingKhaos/khaoslib/qa.yml?branch=main&label=QA&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/actions?query=workflow%3A%22Quality+Assurance%22)
+[![GitHub issues: bugs](https://img.shields.io/github/issues/QuingKhaos/khaoslib/bug?label=Bug%20Reports&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/QuingKhaos/khaoslib?label=Pull%20Requests&style=for-the-badge)](https://github.com/QuingKhaos/khaoslib/pulls)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-hotpink?logo=kofi&logoColor=white&style=for-the-badge)](https://ko-fi.com/quingkhaos)
 
 # QuingKhaos' Factorio Library
 
@@ -6,14 +11,194 @@ A set of commonly-used utilities by QuingKhaos for creating Factorio mods.
 
 ## Usage
 
-Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads) or [GitHub releases](https://github.com/QuingKhaos/khaoslib/releases), unzip it and put it in your mods directory. You can access libraries provided by khaoslib with `require("__khaoslib__.libname")`.
+Download the latest release from the [mod portal](https://mods.factorio.com/mod/khaoslib/downloads)
+or [GitHub releases](https://github.com/QuingKhaos/khaoslib/releases), unzip it
+and put it in your mods directory. You can access libraries provided by khaoslib
+with `require("__khaoslib__.module")`.
 
-Add the khaoslib directory to your language server's library. I recommend installing the [Factorio modding toolkit](https://github.com/justarandomgeek/vscode-factoriomod-debug) and setting it up with the [Sumneko Lua language server](https://github.com/sumneko/lua-language-server) to get cross-mod autocomplete and type checking.
+Add the khaoslib directory to your language server's library. I recommend installing
+the [Factorio modding toolkit](https://github.com/justarandomgeek/vscode-factoriomod-debug)
+and setting it up with the [Sumneko Lua language server](https://github.com/sumneko/lua-language-server)
+to get cross-mod autocomplete and type checking.
+
+## Available Modules
+
+### List Module
+
+Reusable utilities for list manipulation with consistent behavior across Factorio
+mods. Supports both string-based and function-based comparison logic with automatic
+deep copying for data safety.
+
+```lua
+local khaoslib_list = require("__khaoslib__.list")
+
+-- Add items with duplicate prevention
+local my_list = {"iron-plate", "copper-plate"}
+khaoslib_list.add(my_list, "steel-plate", "steel-plate")  -- Only adds if not present
+
+-- Allow duplicates when needed
+khaoslib_list.add(my_list, "byproduct", nil, {allow_duplicates = true})
+
+-- Remove items with flexible matching
+khaoslib_list.remove(my_list, "iron-plate")  -- Remove first match
+khaoslib_list.remove(my_list, "byproduct", {all = true})  -- Remove all matches
+
+-- Replace items with automatic deep copying
+khaoslib_list.replace(my_list, "advanced-circuit", "iron-plate")  -- Replace first match
+khaoslib_list.replace(my_list, "steel-plate", "iron-plate", {all = true})  -- Replace all matches
+
+-- Function-based matching for complex objects
+local recipes = {{name = "iron-plate"}, {name = "copper-plate"}}
+khaoslib_list.replace(recipes, {name = "steel-plate", amount = 1}, function(r)
+  return r.name == "iron-plate"
+end)
+```
+
+**Key Features:**
+
+- **Consistent API**: All functions follow the same parameter patterns
+- **Flexible Matching**: String equality or custom comparison functions
+- **Deep Copying**: Automatic deep copying prevents reference sharing issues
+- **Nil-Safe**: All functions handle nil lists gracefully
+
+**[📖 Full List Module Documentation](docs/list-module.md)**
+
+### Recipe Module
+
+Comprehensive API for manipulating Factorio recipe prototypes during the data stage
+with method chaining, deep copying, and robust error handling.
+
+```lua
+local khaoslib_recipe = require("__khaoslib__.recipe")
+
+-- Modify existing recipe
+khaoslib_recipe:load("iron-plate")
+  :add_ingredient({type = "item", name = "coal", amount = 1})
+  :set({energy_required = 2.0})
+  :commit()
+
+-- Create new recipe from scratch
+khaoslib_recipe:load({
+  name = "advanced-circuit-with-solder",
+  category = "crafting",
+  energy_required = 5,
+  ingredients = {{type = "item", name = "electronic-circuit", amount = 5}},
+  results = {{type = "item", name = "advanced-circuit", amount = 2}}
+}):commit()
+
+-- Complex ingredient/result manipulation with technology integration
+local recipe = khaoslib_recipe:load("steel-plate")
+recipe:remove_ingredient("iron-plate")
+  :add_ingredient({type = "item", name = "processed-iron-ore", amount = 1})
+  :replace_result("steel-plate", {type = "item", name = "steel-plate", amount = 2})
+  :add_unlock("advanced-metallurgy")
+  :remove_unlock("basic-smelting")
+  :commit() -- Commits both recipe and modified technologies
+```
+
+**Key Features:**
+
+- **Method Chaining**: Fluent API design for readable recipe modifications
+- **Flexible Loading**: Load existing recipes or create new ones from prototypes
+- **Ingredient Management**: Add, remove, replace with duplicate prevention
+  (Factorio requirement)
+- **Result Management**: Full support for multiple results with specialized handling
+- **Technology Integration**: Direct recipe-technology unlock relationships with
+  `add_unlock()` and `remove_unlock()`
+- **Deep Copying**: Ensures data stage safety and prevents reference issues
+- **Comprehensive Validation**: Robust error handling with descriptive messages
+
+**[📖 Full Recipe Module Documentation](docs/recipe-module.md)**
+
+### Sprites Module
+
+Utilities for working with Factorio sprites and graphics.
+
+```lua
+local khaoslib_sprites = require("__khaoslib__.sprites")
+```
+
+### Technology Module
+
+Comprehensive API for manipulating Factorio technology prototypes during the data
+stage with method chaining, deep copying, and robust error handling.
+
+```lua
+local khaoslib_technology = require("__khaoslib__.technology")
+
+-- Modify existing technology
+khaoslib_technology:load("electronics")
+  :add_prerequisite("basic-tech")
+  :add_unlock_recipe("electronic-circuit-advanced")
+  :set({unit = {count = 100, time = 30}})
+  :commit()
+
+-- Create new technology from scratch
+khaoslib_technology:load({
+  name = "advanced-electronics",
+  icon = "__mymod__/graphics/technology/advanced-electronics.png",
+  prerequisites = {"electronics", "steel-processing"},
+  effects = {
+    {type = "unlock-recipe", recipe = "advanced-circuit"}
+  },
+  unit = {count = 200, time = 45}
+}):commit()
+
+-- Complex prerequisite and effect manipulation
+local tech = khaoslib_technology:load("military-science-pack")
+tech:remove_prerequisite(function(prereq)
+  return prereq:match("^military%-") and not prereq:match("%-science%-")
+end, {all = true})
+  :add_prerequisite("peaceful-research")
+  :replace_unlock_recipe("military-item", "science-item")
+  :commit()
+
+-- Science pack manipulation
+khaoslib_technology:load("expensive-tech")
+  :add_science_pack({"space-science-pack", 1})
+  :replace_science_pack("automation-science-pack", {"automation-science-pack", 2})
+  :commit()
+
+-- Bulk operations with utility functions
+local military_techs = khaoslib_technology.find(function(tech)
+  return tech.name:match("^military%-")
+end)
+
+for _, tech_name in ipairs(military_techs) do
+  if khaoslib_technology.exists(tech_name) then
+    khaoslib_technology:load(tech_name)
+      :add_prerequisite("peace-treaty")
+      :commit()
+  end
+end
+```
+
+**Key Features:**
+
+- **Method Chaining**: Fluent API design for readable technology modifications
+- **Flexible Loading**: Load existing technologies or create new ones from prototypes
+- **Prerequisite Management**: Add, remove, replace with duplicate prevention
+  (Factorio requirement)
+- **Effect Management**: Full support for all effect types with specialized
+  unlock-recipe functions
+- **Science Pack Control**: Comprehensive science pack cost manipulation (add,
+  remove, replace science packs)
+- **Discovery Utilities**: Find technologies by custom criteria, check existence
+- **Deep Copying**: Ensures data stage safety and prevents reference issues
+- **Comprehensive Validation**: Robust error handling with descriptive messages
+
+**[📖 Full Technology Module Documentation](docs/technology-module.md)**
 
 ## Stability guarantee
 
-khaoslib follows [Semantic Versioning](https://semver.org/). Thus any 0.x API should not be considered stable. I will do my best to avoid breaking changes in minor releases, but if a breaking change is necessary it will be documented in the changelog.
+khaoslib follows [Semantic Versioning](https://semver.org/). Thus any 0.x API should
+not be considered stable. I will do my best to avoid breaking changes in minor releases,
+but if a breaking change is necessary it will be documented in the changelog.
 
 ## Legal notice
 
-khaoslib is licensed under the LGPLv3, unlike my other mods which are all licensed under the GPLv3. Mods that use khaoslib are not required to be open source, nor are they required to be licensed under the LGPLv3. However, if you modify khaoslib itself and distribute the modified version, you must also distribute the source code of your modified version under the LGPLv3.
+khaoslib is licensed under the LGPLv3, unlike my other mods which are all licensed
+under the GPLv3. Mods that use khaoslib are not required to be open source, nor
+are they required to be licensed under the LGPLv3. However, if you modify khaoslib
+itself and distribute the modified version, you must also distribute the source
+code of your modified version under the LGPLv3.

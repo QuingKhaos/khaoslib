@@ -1,4 +1,53 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: ????
+  Features:
+    - Introduces a new list manipulation module with reusable utilities for consistent list operations across mods.
+    - Provides list module functions: has(), add(), remove(), replace() with support for both string and function-based comparisons.
+    - Implements options table support in list module: allow_duplicates for add operations, all parameter for remove/replace operations.
+    - Provides extensive error handling with descriptive messages for invalid parameters and edge cases.
+    - Ensures deep copying integration throughout all add/replace operations for data stage safety.
+    - Exposes a recipe manipulation object to create, load, modify, and commit recipe prototypes with fluent API and method chaining.
+    - Adds comprehensive ingredient manipulation: add, remove, replace, and query ingredients with duplicate prevention.
+    - Adds advanced result manipulation: add, remove, replace, count, and query results with full duplicate support.
+    - Supports both string-based matching (by name) and custom comparison functions for flexible ingredient/result filtering.
+    - Provides options tables for extensible parameters (e.g., all flag for bulk operations on matching items).
+    - Includes deep copying throughout for data stage safety and prevents accidental shared state modification.
+    - Offers comprehensive validation and error handling with descriptive error messages.
+    - Exposes a technology manipulation module with comprehensive fluent API for creating, loading, modifying, and committing technology prototypes.
+    - Provides complete prerequisite management: add, remove, replace, count, and query prerequisites with duplicate prevention.
+    - Offers comprehensive effect manipulation: add, remove, replace, count, and query all technology effects.
+    - Includes specialized unlock-recipe helpers for common recipe unlocking operations with enhanced API.
+    - Provides comprehensive science pack management: add, remove, replace, count, and query science packs with duplicate prevention.
+    - Supports both string-based matching (by name) and custom comparison functions for flexible prerequisite/effect/science pack filtering.
+    - Implements utility functions for technology discovery and existence checking across the data stage.
+    - Ensures method chaining and fluent API design for readable, maintainable code.
+    - Integrates recipe and technology modules with cross-module unlock management functionality.
+    - Adds recipe:add_unlock() and recipe:remove_unlock() methods for managing technology unlock relationships directly from recipes.
+    - Implements automatic technology state tracking and deferred commit system for recipe-technology integration.
+    - Provides deep copy safety across module boundaries with independent technology manipulator instances per recipe.
+    - Ensures consistent API design patterns across all manipulation modules (prerequisites, effects, science packs).
+    - Standardizes terminology throughout documentation and codebase for clarity and maintainability.
+  Modding:
+    - Establishes comprehensive Lua unit testing infrastructure with LuaUnit framework integration.
+    - Implements complete VS Code testing environment with debug configurations, tasks, and extension recommendations.
+    - Provides shared testing utilities (test_utils.lua) with mock Factorio environment and helper functions.
+    - Creates unified module loading system (module_loader.lua) supporting both Factorio and testing environments.
+    - Adds full debugging support with Local Lua Debugger integration, breakpoints, and step-through debugging.
+    - Includes comprehensive test suites for all modules: 62+ total tests (30 list tests, 9 recipe tests, 23 technology tests).
+    - Provides VS Code tasks for test execution: Run All Tests, Run Current Test, and module-specific test runners.
+    - Implements dual-environment module loading with automatic environment detection for seamless testing.
+    - Establishes testing documentation (TESTING_SETUP.md) and debugging guide (DEBUGGING.md) for contributors.
+    - Deduplicates testing setup code through shared utilities, reducing maintenance overhead and improving consistency.
+    - Adds complete GitHub Actions CI/CD pipeline with automated testing, quality assurance, and release management.
+    - Implements continuous integration workflow (ci.yml) running all test suites on every push and pull request.
+    - Provides comprehensive quality assurance workflow (qa.yml) with Lua linting, JSON validation, markdown linting, documentation validation, and multi-version testing.
+    - Implements comprehensive JSON validation and linting with jsonlint for all configuration files (.vscode, .markdownlint.json, info.json).
+    - Adds markdown linting with markdownlint-cli using project-specific .markdownlint.json configuration for consistent documentation formatting.
+    - Supports dual Lua version testing: Lua 5.2 (Factorio production environment) and Lua 5.4 (modern development).
+    - Includes automated release workflow (release.yml) with version validation, mod packaging, and GitHub release creation.
+    - Establishes professional development workflow with automated quality gates and release management.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19
   Changes:

@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Current Lua Test File",
+      "type": "lua-local",
+      "request": "launch",
+      "program": {
+        "lua": "lua",
+        "file": "${file}"
+      },
+      "args": []
+    },
+    {
+      "name": "Debug List Tests",
+      "type": "lua-local",
+      "request": "launch",
+      "program": {
+        "lua": "lua",
+        "file": "${workspaceFolder}/tests/test_list.lua"
+      },
+      "args": []
+    },
+    {
+      "name": "Debug Recipe Tests",
+      "type": "lua-local",
+      "request": "launch",
+      "program": {
+        "lua": "lua",
+        "file": "${workspaceFolder}/tests/test_recipe.lua"
+      },
+      "args": []
+    },
+    {
+      "name": "Debug Technology Tests",
+      "type": "lua-local",
+      "request": "launch",
+      "program": {
+        "lua": "lua",
+        "file": "${workspaceFolder}/tests/test_technology.lua"
+      },
+      "args": []
+    }
+  ]
+}

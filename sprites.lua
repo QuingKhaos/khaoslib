@@ -24,7 +24,8 @@ local khaoslib_sprites = {}
 --- Traverses a sprite or animation or a table of them and applies the given function to each sprite/animation found.
 --- @generic T : khaoslib_sprites.AnimationAll|khaoslib_sprites.SpriteAll
 --- @param sprites T The sprite or animation or a table of them.
---- @param fn fun(sprite: khaoslib_sprites.Animation|khaoslib_sprites.Sprite): nil A function that takes a sprite or animation copy and applies modifications to it.
+--- @param fn fun(sprite: khaoslib_sprites.Animation|khaoslib_sprites.Sprite): nil A function that takes a sprite or animation copy
+---   and applies modifications to it.
 --- @return T copy A copy of the given animation or sprite or a table of them with the modifications applied.
 --- @nodiscard
 function khaoslib_sprites.traverse(sprites, fn)

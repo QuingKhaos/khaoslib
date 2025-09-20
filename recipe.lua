@@ -3,6 +3,7 @@ if ... ~= "__khaoslib__.recipe" then
 end
 
 local khaoslib_list = require("__khaoslib__.list")
+local khaoslib_technology = require("__khaoslib__.technology")
 local util = require("util")
 
 -- #region Basic manipulation methods
@@ -17,6 +18,7 @@ local util = require("util")
 --- Key features:
 --- - Ingredients prevent duplicates (Factorio requirement)
 --- - Results allow duplicates with specialized handling functions
+--- - Technology unlock integration for recipe-tech relationships
 --- - Comprehensive validation and error handling
 --- - Method chaining for fluent API design
 --- - Deep copying ensures data stage safety
@@ -87,6 +89,13 @@ local util = require("util")
 ---       :commit()
 ---   end
 --- end
+---
+--- -- Technology unlock management
+--- khaoslib_recipe:load("my-recipe")
+---   :add_unlock("my-cool-tech-1")
+---   :add_unlock("alternative-tech-2")
+---   :remove_unlock("bad-tech")
+---   :commit() -- Commits both recipe and modified technologies
 --- ```
 ---
 --- ## Performance Notes
@@ -98,6 +107,7 @@ local util = require("util")
 ---
 --- @class khaoslib.RecipeManipulator
 --- @field private recipe data.RecipePrototype The recipe currently being manipulated.
+--- @field private modified_technologies table<string, khaoslib.TechnologyManipulator> Technologies that have been modified and need committing.
 --- @operator add(khaoslib.RecipeManipulator): khaoslib.RecipeManipulator
 local khaoslib_recipe = {}
 
@@ -123,7 +133,7 @@ function khaoslib_recipe:load(recipe)
 
   --- @cast _recipe data.RecipePrototype
   --- @type khaoslib.RecipeManipulator
-  local obj = {recipe = _recipe}
+  local obj = {recipe = _recipe, modified_technologies = {}}
   setmetatable(obj, self)
   self.__index = self
 
@@ -164,11 +174,17 @@ function khaoslib_recipe:copy(new_name)
 end
 
 --- Commits the changes made to the recipe currently being manipulated back to the data stage.
---- If the recipe already exists, it is overwritten.
+--- If the recipe already exists, it is overwritten. Also commits any modified technologies.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 function khaoslib_recipe:commit()
+  -- Commit the recipe
   self:remove()
   data:extend({self:get()})
+
+  -- Commit all modified technologies
+  for _, tech_manipulator in pairs(self.modified_technologies) do
+    tech_manipulator:commit()
+  end
 
   return self
 end
@@ -607,6 +623,71 @@ end
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 function khaoslib_recipe:clear_results()
   self.recipe.results = {}
+
+  return self
+end
+
+-- #endregion
+
+-- #region Technology unlock methods
+-- Methods for managing which technologies unlock this recipe.
+
+--- Adds this recipe as an unlock-recipe effect to the specified technology.
+--- The technology modification is tracked and will be committed when the recipe is committed.
+---
+--- ```lua
+--- -- Add this recipe to a technology's unlock effects
+--- khaoslib_recipe:load("my-recipe")
+---   :add_unlock("my-cool-tech-1")
+---   :add_unlock("alternative-tech-2")
+---   :commit() -- Commits both recipe and modified technologies
+--- ```
+---
+--- @param technology data.TechnologyID The name of the technology to add this recipe's unlock effect to.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If technology is not a string or if the technology doesn't exist.
+function khaoslib_recipe:add_unlock(technology)
+  if not khaoslib_technology.exists(technology) then error("No such technology: " .. technology, 2) end
+
+  -- Load or get existing technology manipulator
+  local tech_manipulator = self.modified_technologies[technology]
+  if not tech_manipulator then
+    tech_manipulator = khaoslib_technology:load(technology)
+    self.modified_technologies[technology] = tech_manipulator
+  end
+
+  -- Add unlock recipe effect
+  tech_manipulator:add_unlock_recipe(self.recipe.name)
+
+  return self
+end
+
+--- Removes this recipe's unlock-recipe effect from the specified technology.
+--- The technology modification is tracked and will be committed when the recipe is committed.
+---
+--- ```lua
+--- -- Remove this recipe from a technology's unlock effects
+--- khaoslib_recipe:load("my-recipe")
+---   :remove_unlock("bad-tech")
+---   :remove_unlock("old-tech")
+---   :commit() -- Commits both recipe and modified technologies
+--- ```
+---
+--- @param technology data.TechnologyID The name of the technology to remove this recipe's unlock effect from.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If technology is not a string or if the technology doesn't exist.
+function khaoslib_recipe:remove_unlock(technology)
+  if not khaoslib_technology.exists(technology) then error("No such technology: " .. technology, 2) end
+
+  -- Load or get existing technology manipulator
+  local tech_manipulator = self.modified_technologies[technology]
+  if not tech_manipulator then
+    tech_manipulator = khaoslib_technology:load(technology)
+    self.modified_technologies[technology] = tech_manipulator
+  end
+
+  -- Remove unlock recipe effect (remove all matching effects by default)
+  tech_manipulator:remove_unlock_recipe(self.recipe.name, {all = true})
 
   return self
 end

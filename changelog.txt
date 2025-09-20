@@ -21,6 +21,10 @@ Date: ????
     - Supports both string-based matching (by name) and custom comparison functions for flexible prerequisite/effect filtering.
     - Implements utility functions for technology discovery and existence checking across the data stage.
     - Ensures method chaining and fluent API design for readable, maintainable code.
+    - Integrates recipe and technology modules with cross-module unlock management functionality.
+    - Adds recipe:add_unlock() and recipe:remove_unlock() methods for managing technology unlock relationships directly from recipes.
+    - Implements automatic technology state tracking and deferred commit system for recipe-technology integration.
+    - Provides deep copy safety across module boundaries with independent technology manipulator instances per recipe.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

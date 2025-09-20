@@ -7,6 +7,7 @@ The recipe module provides a comprehensive API for manipulating Factorio recipe 
 - [Quick Start](#quick-start)
 - [Core Concepts](#core-concepts)
 - [API Reference](#api-reference)
+- [Technology Integration](#technology-integration)
 - [Common Patterns](#common-patterns)
 - [Error Handling](#error-handling)
 - [Performance Considerations](#performance-considerations)
@@ -342,6 +343,119 @@ local rare_results = recipe:get_matching_results(function(result)
 end)
 ```
 
+## Technology Integration
+
+The recipe module integrates seamlessly with the technology module to manage recipe unlock relationships. This allows you to specify which technologies should unlock specific recipes directly from the recipe manipulation API.
+
+### Technology Unlock Methods
+
+#### `recipe:add_unlock(technology_id)`
+
+Adds this recipe as an unlock-recipe effect to the specified technology.
+
+**Parameters:**
+
+- `technology_id` (string): Technology name to add unlock effect to
+
+**Examples:**
+
+```lua
+-- Add recipe to technology unlock effects
+khaoslib_recipe:load("my-recipe")
+  :add_unlock("my-cool-tech-1")
+  :add_unlock("alternative-tech-2")
+  :commit() -- Commits both recipe and modified technologies
+
+-- Chain with other operations
+khaoslib_recipe:load("advanced-circuit")
+  :add_ingredient({type = "item", name = "gold-wire", amount = 1})
+  :add_unlock("electronics-advanced")
+  :add_unlock("circuit-network")
+  :commit()
+```
+
+#### `recipe:remove_unlock(technology_id)`
+
+Removes this recipe's unlock-recipe effect from the specified technology.
+
+**Parameters:**
+
+- `technology_id` (string): Technology name to remove unlock effect from
+
+**Examples:**
+
+```lua
+-- Remove recipe from technology unlock effects
+khaoslib_recipe:load("my-recipe")
+  :remove_unlock("bad-tech")
+  :remove_unlock("deprecated-tech")
+  :commit()
+
+-- Conditional unlock removal
+local recipe = khaoslib_recipe:load("military-item")
+if some_peace_mode_setting then
+  recipe:remove_unlock("military-science-pack")
+    :add_unlock("peaceful-research")
+end
+recipe:commit()
+```
+
+### Deep Copy Safety
+
+All technology modifications are handled with deep copy safety:
+
+```lua
+-- Multiple recipe manipulators can safely modify the same technology
+local recipe1 = khaoslib_recipe:load("iron-plate")
+local recipe2 = khaoslib_recipe:load("steel-plate")
+
+recipe1:add_unlock("metallurgy")
+recipe2:add_unlock("metallurgy") -- Safe - separate technology manipulator instances
+
+recipe1:commit() -- Commits recipe1 and its technology changes
+recipe2:commit() -- Commits recipe2 and its technology changes
+```
+
+### Technology State Management
+
+The recipe module tracks modified technologies and commits them automatically:
+
+```lua
+local recipe = khaoslib_recipe:load("my-recipe")
+
+-- These operations modify technologies but don't commit them yet
+recipe:add_unlock("tech-1")
+recipe:add_unlock("tech-2")
+recipe:remove_unlock("old-tech")
+
+-- Single commit handles both recipe and all modified technologies
+recipe:commit() -- Commits recipe, tech-1, tech-2, and old-tech changes
+```
+
+### Technology Integration Error Handling
+
+Technology integration provides comprehensive error checking:
+
+```lua
+-- This will throw an error with a clear message
+local success, err = pcall(function()
+  recipe:add_unlock("nonexistent-technology")
+end)
+if not success then
+  -- Error: "No such technology: nonexistent-technology"
+  log("Error: " .. err)
+end
+
+-- Parameter validation
+local success, err = pcall(function()
+  recipe:add_unlock(123) -- Invalid parameter type
+end)
+if not success then
+  -- Error: "technology_name parameter: Expected string, got number"
+  log("Error: " .. err)
+end
+```
+
 ## Common Patterns
 
 ### Recipe Modifications
@@ -394,6 +508,40 @@ for _, recipe_name in ipairs(base_recipes) do
 end
 ```
 
+### Technology-Recipe Integration
+
+```lua
+-- Create recipe variants with different technology requirements
+khaoslib_recipe:load("electronic-circuit")
+  :copy("electronic-circuit-advanced")
+  :add_ingredient({type = "item", name = "gold-wire", amount = 1})
+  :remove_unlock("electronics") -- Remove from basic tech
+  :add_unlock("advanced-electronics") -- Add to advanced tech
+  :add_unlock("circuit-network") -- Also unlock for circuit network
+  :commit()
+
+-- Batch technology reassignment
+local military_recipes = {"pistol", "submachine-gun", "shotgun"}
+for _, recipe_name in ipairs(military_recipes) do
+  if data.raw.recipe[recipe_name] then
+    khaoslib_recipe:load(recipe_name)
+      :remove_unlock("military") -- Remove from general military tech
+      :add_unlock("firearms") -- Add to specific firearms tech
+      :commit()
+  end
+end
+
+-- Conditional technology unlocks based on settings
+local recipe = khaoslib_recipe:load("uranium-rounds-magazine")
+if settings.startup["enable-nuclear-weapons"].value then
+  recipe:add_unlock("nuclear-power")
+else
+  recipe:remove_unlock("nuclear-power")
+    :add_unlock("military-science-pack")
+end
+recipe:commit()
+```
+
 ### Complex Result Management
 
 ```lua
@@ -437,18 +585,22 @@ The module provides comprehensive error checking with descriptive messages:
 
 ```lua
 -- This will throw an error with a clear message
-try {
+local success, err = pcall(function()
   khaoslib_recipe:load("nonexistent-recipe")
-} catch {
+end)
+if not success then
   -- Error: "No such recipe: nonexistent-recipe"
-}
+  log("Error: " .. err)
+end
 
 -- Invalid ingredient structure
-try {
+local success, err = pcall(function()
   recipe:add_ingredient({name = "iron-ore"}) -- Missing type and amount
-} catch {
+end)
+if not success then
   -- Error: "ingredient parameter: Must have a type field of type string"
-}
+  log("Error: " .. err)
+end
 ```
 
 ### Common Error Scenarios
@@ -499,6 +651,12 @@ recipe:add_ingredient(ingredient2):commit() -- Less efficient
 - Deep copying ensures safety but uses more memory
 - Use `has_ingredient()` / `has_result()` to avoid unnecessary operations
 - Consider bulk operations for large-scale modifications
+
+### Technology Integration Performance
+
+- Modified technologies are cached and reused within a single recipe manipulator
+- Multiple recipes modifying the same technology create separate manipulator instances
+- Technology commits are batched - all modified technologies commit together with the recipe
 
 ### Large-Scale Modifications
 

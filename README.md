@@ -72,12 +72,14 @@ khaoslib_recipe:load({
   results = {{type = "item", name = "advanced-circuit", amount = 2}}
 }):commit()
 
--- Complex ingredient/result manipulation
+-- Complex ingredient/result manipulation with technology integration
 local recipe = khaoslib_recipe:load("steel-plate")
 recipe:remove_ingredient("iron-plate")
   :add_ingredient({type = "item", name = "processed-iron-ore", amount = 1})
   :replace_result("steel-plate", {type = "item", name = "steel-plate", amount = 2})
-  :commit()
+  :add_unlock("advanced-metallurgy")
+  :remove_unlock("basic-smelting")
+  :commit() -- Commits both recipe and modified technologies
 ```
 
 **Key Features:**
@@ -86,6 +88,7 @@ recipe:remove_ingredient("iron-plate")
 - **Flexible Loading**: Load existing recipes or create new ones from prototypes
 - **Ingredient Management**: Add, remove, replace with duplicate prevention (Factorio requirement)
 - **Result Management**: Full support for multiple results with specialized handling
+- **Technology Integration**: Direct recipe-technology unlock relationships with `add_unlock()` and `remove_unlock()`
 - **Deep Copying**: Ensures data stage safety and prevents reference issues
 - **Comprehensive Validation**: Robust error handling with descriptive messages
 

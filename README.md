@@ -189,11 +189,31 @@ end
 
 **[📖 Full Technology Module Documentation](docs/technology-module.md)**
 
-## Stability guarantee
+## Stability Guarantee
 
-khaoslib follows [Semantic Versioning](https://semver.org/). Thus any 0.x API should
-not be considered stable. I will do my best to avoid breaking changes in minor releases,
-but if a breaking change is necessary it will be documented in the changelog.
+khaoslib follows [Semantic Versioning 2.0.0](https://semver.org/) with specific considerations
+for the Factorio modding ecosystem.
+
+### 0.x Releases (Pre-1.0.0)
+
+**0.x APIs should not be considered completely stable**, allowing for possible breaking
+changes in minor releases when necessary. However, given Factorio's single-version
+dependency constraint (only one version of a mod can be active), backward compatibility
+is prioritized even in 0.x releases.
+
+**Release Strategy**:
+
+- **Minor versions (0.X.0)**: New features, possible breaking changes for API improvements
+- **Patch versions (0.x.Y)**: Bug fixes, optimizations, documentation updates
+- **Breaking changes**: Always documented in changelog with migration guidance when possible
+
+### 1.0+ Releases (Stable API)
+
+Once v1.0.0 is released, khaoslib will provide strict backward compatibility guarantees:
+
+- **No breaking changes** in minor or patch releases
+- **Deprecation policy**: Minimum 6-month notice for API changes
+- **Long-term support** for major versions
 
 ## Legal notice
 

@@ -158,7 +158,8 @@ end
 ---
 --- @param list table|nil The list to add to (will be created if nil)
 --- @param item any The item to add (will be deep copied)
---- @param compare function|string|nil A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
+--- @param compare function|string|nil A comparison function that receives an item and returns boolean,
+---   or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
 --- @param options table? Options table with the following fields:
 ---   - `allow_duplicates` (boolean, default false): If true, skips duplicate checking and adds the item directly
 --- @return table list The modified list (same reference as input, or new table if input was nil)

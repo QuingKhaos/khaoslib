@@ -234,8 +234,8 @@ end
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If other is not a technology manipulation object.
 function khaoslib_technology:__add(other)
-  if type(other) ~= "table" or getmetatable(other) ~= khaoslib_technology then 
-    error("Can only concatenate with another khaoslib.TechnologyManipulator object", 2) 
+  if type(other) ~= "table" or getmetatable(other) ~= khaoslib_technology then
+    error("Can only concatenate with another khaoslib.TechnologyManipulator object", 2)
   end
 
   local other_copy = other:get()
@@ -609,7 +609,7 @@ end
 --- ```
 ---
 --- @param recipe data.RecipeID The name of the recipe to remove.
---- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching 
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, removes all matching
 ---   unlock-recipe effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If recipe is not a string.
@@ -637,7 +637,7 @@ end
 ---
 --- @param old_recipe data.RecipeID The name of the recipe to replace.
 --- @param new_recipe data.RecipeID The name of the new recipe to unlock.
---- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching 
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching
 ---   unlock-recipe effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If old_recipe or new_recipe is not a string.

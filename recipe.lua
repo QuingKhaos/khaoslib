@@ -390,14 +390,14 @@ end
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If old_ingredient is not a string or function, or new_ingredient is not a table.
 function khaoslib_recipe:replace_ingredient(old_ingredient, new_ingredient, options)
-  if type(old_ingredient) ~= "string" and type(old_ingredient) ~= "function" then 
-    error("old_ingredient parameter: Expected string or function, got " .. type(old_ingredient), 2) 
+  if type(old_ingredient) ~= "string" and type(old_ingredient) ~= "function" then
+    error("old_ingredient parameter: Expected string or function, got " .. type(old_ingredient), 2)
   end
   if type(new_ingredient) ~= "table" then error("new_ingredient parameter: Expected table, got " .. type(new_ingredient), 2) end
   if not new_ingredient.type or type(new_ingredient.type) ~= "string" then error("new_ingredient parameter: Must have a type field of type string", 2) end
   if not new_ingredient.name or type(new_ingredient.name) ~= "string" then error("new_ingredient parameter: Must have a name field of type string", 2) end
-  if not new_ingredient.amount or type(new_ingredient.amount) ~= "number" then 
-    error("new_ingredient parameter: Must have an amount field of type number", 2) 
+  if not new_ingredient.amount or type(new_ingredient.amount) ~= "number" then
+    error("new_ingredient parameter: Must have an amount field of type number", 2)
   end
   if options ~= nil and type(options) ~= "table" then error("options parameter: Expected table or nil, got " .. type(options), 2) end
 
@@ -620,7 +620,7 @@ end
 ---
 --- @param old_result function|string A comparison function or result name to match.
 --- @param new_result data.ProductPrototype The new result prototype to replace with.
---- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching results 
+--- @param options table? Options table with fields: `all` (boolean, default false) - if true, replaces all matching results
 ---   instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If old_result is not a string or function, or new_result is not a table.

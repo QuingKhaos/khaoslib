@@ -726,8 +726,3 @@ end
 4. **Handle errors gracefully**: Wrap operations in appropriate checks
 5. **Document complex operations**: Use comments for non-obvious manipulations
 6. **Test thoroughly**: Verify recipes work in-game after modifications
-
-## Examples Repository
-
-For more examples and real-world usage patterns, see the
-[khaoslib examples repository](https://github.com/QuingKhaos/khaoslib-examples) (if available).

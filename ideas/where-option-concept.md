@@ -2,7 +2,8 @@
 
 ## Overview
 
-The `where` option is a proposed future enhancement for khaoslib's recipe manipulation functions that would provide SQL-like filtering capabilities for more expressive and intuitive result manipulation.
+The `where` option is a proposed future enhancement for khaoslib's recipe manipulation functions that would provide
+SQL-like filtering capabilities for more expressive and intuitive result manipulation.
 
 ## Current State vs. Proposed Enhancement
 
@@ -189,7 +190,8 @@ The `where` option demonstrates the flexibility of the options table design but 
 2. User feedback indicates the current API is insufficient
 3. The benefits outweigh the added complexity
 
-For now, the existing comparison function parameter provides all necessary functionality while keeping the API focused and manageable.
+For now, the existing comparison function parameter provides all necessary functionality while keeping the API focused
+and manageable.
 
 ## Related Concepts
 

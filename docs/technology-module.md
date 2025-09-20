@@ -1,6 +1,7 @@
 # Technology Module Documentation
 
-The Technology Module provides a comprehensive, fluent API for manipulating Factorio technology prototypes during the data stage. It supports method chaining, deep copying for data safety, and robust error handling.
+The Technology Module provides a comprehensive, fluent API for manipulating Factorio technology prototypes during the
+data stage. It supports method chaining, deep copying for data safety, and robust error handling.
 
 ## Table of Contents
 
@@ -489,7 +490,8 @@ Replaces unlock-recipe effects.
 
 ### Science Pack Management
 
-Science packs define the research cost of technologies (what science packs and amounts are needed). These methods provide complete control over technology research costs, similar to recipe ingredient management.
+Science packs define the research cost of technologies (what science packs and amounts are needed). These methods
+provide complete control over technology research costs, similar to recipe ingredient management.
 
 #### `tech:get_science_packs()`
 

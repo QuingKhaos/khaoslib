@@ -1,6 +1,7 @@
 # khaoslib Recipe Module Documentation
 
-The recipe module provides a comprehensive API for manipulating Factorio recipe prototypes during the data stage. It offers a fluent interface with method chaining, robust error handling, and deep copying for data safety.
+The recipe module provides a comprehensive API for manipulating Factorio recipe prototypes during the data stage. It
+offers a fluent interface with method chaining, robust error handling, and deep copying for data safety.
 
 ## Table of Contents
 
@@ -345,7 +346,8 @@ end)
 
 ## Technology Integration
 
-The recipe module integrates seamlessly with the technology module to manage recipe unlock relationships. This allows you to specify which technologies should unlock specific recipes directly from the recipe manipulation API.
+The recipe module integrates seamlessly with the technology module to manage recipe unlock relationships. This allows
+you to specify which technologies should unlock specific recipes directly from the recipe manipulation API.
 
 ### Technology Unlock Methods
 
@@ -727,4 +729,5 @@ end
 
 ## Examples Repository
 
-For more examples and real-world usage patterns, see the [khaoslib examples repository](https://github.com/QuingKhaos/khaoslib-examples) (if available).
+For more examples and real-world usage patterns, see the
+[khaoslib examples repository](https://github.com/QuingKhaos/khaoslib-examples) (if available).

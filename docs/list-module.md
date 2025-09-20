@@ -1,8 +1,8 @@
 # List Module
 
-The `list` module provides reusable utilities for list manipulation with consistent behavior across Factorio mods. It supports both string-based and function-based comparison logic, with all functions that add or modify items using deep copying to prevent unintended reference sharing.
-
-## Usage
+The `list` module provides reusable utilities for list manipulation with consistent behavior across Factorio mods. It
+supports both string-based and function-based comparison logic, with all functions that add or modify items using deep
+copying to prevent unintended reference sharing.## Usage
 
 ```lua
 local khaoslib_list = require("__khaoslib__.list")
@@ -24,7 +24,8 @@ Checks if a list contains an item matching a comparison function or string.
 **Parameters:**
 
 - `list` (table|nil): The list to search in (can be nil, returns false)
-- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct
+  equality comparison
 
 **Returns:**
 
@@ -47,13 +48,16 @@ end) -- true
 
 Adds an item to a list with optional duplicate prevention.
 
-By default, this function prevents duplicates by checking if an equivalent item already exists in the list. When `allow_duplicates` is true, items are added directly without any duplicate checking. All added items are deep copied to prevent unintended reference sharing.
+By default, this function prevents duplicates by checking if an equivalent item already exists in the list. When
+`allow_duplicates` is true, items are added directly without any duplicate checking. All added items are deep copied to
+prevent unintended reference sharing.
 
 **Parameters:**
 
 - `list` (table|nil): The list to add to (will be created if nil)
 - `item` (any): The item to add (will be deep copied)
-- `compare` (function|string|nil): A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
+- `compare` (function|string|nil): A comparison function that receives an item and returns boolean, or a string for
+  direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
 - `options` (table?): Options table with the following fields:
   - `allow_duplicates` (boolean, default false): If true, skips duplicate checking and adds the item directly
 
@@ -83,12 +87,14 @@ end)
 
 Removes matching items from a list.
 
-By default, removes only the first item that matches the comparison criteria. When `all` is true, removes all matching items in a single call.
+By default, removes only the first item that matches the comparison criteria. When `all` is true, removes all matching
+items in a single call.
 
 **Parameters:**
 
 - `list` (table|nil): The list to remove from (returns empty table if nil)
-- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct
+  equality comparison
 - `options` (table?): Options table with the following fields:
   - `all` (boolean, default false): If true, removes all matching items instead of just the first
 
@@ -118,13 +124,15 @@ end) -- Removes iron-plate recipe
 
 Replaces matching items in a list with a new item.
 
-By default, replaces only the first item that matches the comparison criteria. When `all` is true, replaces all matching items in a single call. The new item is deep copied to prevent unintended reference sharing.
+By default, replaces only the first item that matches the comparison criteria. When `all` is true, replaces all matching
+items in a single call. The new item is deep copied to prevent unintended reference sharing.
 
 **Parameters:**
 
 - `list` (table|nil): The list to modify (returns empty table if nil)
 - `new_item` (any): The new item to replace with (will be deep copied)
-- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+- `compare` (function|string): A comparison function that receives an item and returns boolean, or a string for direct
+  equality comparison
 - `options` (table?): Options table with the following fields:
   - `all` (boolean, default false): If true, replaces all matching items instead of just the first
 
@@ -195,13 +203,17 @@ khaoslib_list.replace(tech_prerequisites, "automation-2", "automation")
 
 ## Best Practices
 
-1. **Use function comparisons for complex objects**: When working with tables that have properties, use function comparisons to match by specific fields.
+1. **Use function comparisons for complex objects**: When working with tables that have properties, use function
+   comparisons to match by specific fields.
 
-2. **Leverage the options table**: Use `{allow_duplicates = true}` when you want to allow multiple instances of the same item, and `{all = true}` when you need to operate on all matching items.
+2. **Leverage the options table**: Use `{allow_duplicates = true}` when you want to allow multiple instances of the
+   same item, and `{all = true}` when you need to operate on all matching items.
 
-3. **Deep copying is automatic**: All items added or replaced are automatically deep copied, so you don't need to worry about reference sharing issues.
+3. **Deep copying is automatic**: All items added or replaced are automatically deep copied, so you don't need to worry
+   about reference sharing issues.
 
-4. **Nil-safe operations**: All functions handle nil lists gracefully, either returning appropriate default values or empty tables.
+4. **Nil-safe operations**: All functions handle nil lists gracefully, either returning appropriate default values or
+   empty tables.
 
 5. **Error handling**: The module provides clear error messages for invalid parameters, helping with debugging during development.
 
@@ -215,6 +227,8 @@ The module provides comprehensive error checking:
 
 ## Performance Considerations
 
-- **Single vs. All operations**: When you need to remove or replace multiple items, use the `{all = true}` option instead of calling the function multiple times.
+- **Single vs. All operations**: When you need to remove or replace multiple items, use the `{all = true}` option
+  instead of calling the function multiple times.
 - **Backwards iteration**: Remove operations use backwards iteration when `all = true` to avoid index shifting issues.
-- **Deep copying overhead**: Be aware that all add/replace operations create deep copies of items, which has a performance cost for large or complex objects.
+- **Deep copying overhead**: Be aware that all add/replace operations create deep copies of items, which has a
+  performance cost for large or complex objects.

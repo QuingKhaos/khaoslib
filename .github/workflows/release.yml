@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Lua 5.2
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.2"
+
+      - name: Run Tests Before Release
+        run: |
+          echo "🧪 Running full test suite before release..."
+          cd tests
+          lua test_list.lua
+          lua test_recipe.lua
+          lua test_technology.lua
+          echo "✅ All tests passed!"
+
+      - name: Validate Version Consistency
+        run: |
+          echo "🔍 Checking version consistency..."
+
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Tag version: $VERSION"
+
+          # Check info.json version
+          INFO_VERSION=$(python3 -c "import json; print(json.load(open('info.json'))['version'])")
+          echo "info.json version: $INFO_VERSION"
+
+          if [ "$VERSION" != "$INFO_VERSION" ]; then
+            echo "❌ Version mismatch between tag ($VERSION) and info.json ($INFO_VERSION)"
+            exit 1
+          fi
+
+          echo "✅ Version consistency check passed"
+
+      - name: Create Factorio Mod Package
+        run: |
+          echo "📦 Creating mod package..."
+
+          # Create mod directory structure
+          mkdir -p khaoslib
+
+          # Copy mod files (exclude development files)
+          cp *.lua khaoslib/ 2>/dev/null || true
+          cp info.json khaoslib/
+          cp changelog.txt khaoslib/
+          cp LICENSE khaoslib/
+          cp README.md khaoslib/
+
+          # Copy docs if they exist
+          if [ -d "docs" ]; then
+            cp -r docs khaoslib/
+          fi
+
+          # Create zip file
+          zip -r khaoslib.zip khaoslib/
+
+          echo "✅ Mod package created: khaoslib.zip"
+
+      - name: Extract Release Notes
+        id: release_notes
+        run: |
+          echo "📝 Extracting release notes from changelog..."
+
+          # Extract the latest version's changes from changelog.txt
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          # Create release notes
+          echo "# khaoslib $VERSION" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes" >> release_notes.md
+
+          # Extract changes for this version from changelog.txt
+          awk "/Version: $VERSION/,/^---/" changelog.txt | head -n -1 | tail -n +2 >> release_notes.md
+
+          echo "✅ Release notes prepared"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          files: khaoslib.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -41,7 +41,9 @@ Date: ????
     - Deduplicates testing setup code through shared utilities, reducing maintenance overhead and improving consistency.
     - Adds complete GitHub Actions CI/CD pipeline with automated testing, quality assurance, and release management.
     - Implements continuous integration workflow (ci.yml) running all test suites on every push and pull request.
-    - Provides comprehensive quality assurance workflow (qa.yml) with Lua linting, documentation validation, and multi-version testing.
+    - Provides comprehensive quality assurance workflow (qa.yml) with Lua linting, JSON validation, markdown linting, documentation validation, and multi-version testing.
+    - Implements comprehensive JSON validation and linting with jsonlint for all configuration files (.vscode, .markdownlint.json, info.json).
+    - Adds markdown linting with markdownlint-cli using project-specific .markdownlint.json configuration for consistent documentation formatting.
     - Supports dual Lua version testing: Lua 5.2 (Factorio production environment) and Lua 5.4 (modern development).
     - Includes automated release workflow (release.yml) with version validation, mod packaging, and GitHub release creation.
     - Establishes professional development workflow with automated quality gates and release management.

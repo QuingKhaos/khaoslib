@@ -13,7 +13,8 @@ if type(data) == "nil" or _G.util ~= nil then
   -- Testing environment
   module_loader = require("module_loader")
 else
-  -- Factorio environment  
+  -- Factorio environment
+  --- @diagnostic disable-next-line: different-requires
   module_loader = require("__khaoslib__.module_loader")
 end
 

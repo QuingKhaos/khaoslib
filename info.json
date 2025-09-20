@@ -11,8 +11,8 @@
   ],
   "package": {
     "ignore": [
-      "tests",
-      "luaunit.lua"
+      "ideas",
+      "tests"
     ]
   }
 }

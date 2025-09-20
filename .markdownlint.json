@@ -1,0 +1,57 @@
+{
+  "code-block-style": {
+    "style": "fenced"
+  },
+  "code-fence-style": {
+    "style": "backtick"
+  },
+  "emphasis-style": {
+    "style": "asterisk"
+  },
+  "fenced-code-language": {
+    "allowed_languages": [
+      "bash",
+      "lua",
+      "plaintext",
+      "powershell"
+    ],
+    "language_only": true
+  },
+  "first-line-h1": {
+    "allow_preamble": true
+  },
+  "heading-style": {
+    "style": "atx"
+  },
+  "hr-style": {
+    "style": "---"
+  },
+  "line-length": {
+    "code_blocks": false
+  },
+  "link-image-style": {
+    "collapsed": false,
+    "shortcut": false,
+    "url_inline": false
+  },
+  "ol-prefix": {
+    "style": "ordered"
+  },
+  "proper-names": {
+    "code_blocks": false,
+    "names": [
+      "Crowdin",
+      "Factorio",
+      "GitHub",
+      "Ko-fi",
+      "Lua",
+      "Wube"
+    ]
+  },
+  "strong-style": {
+    "style": "asterisk"
+  },
+  "ul-style": {
+    "style": "dash"
+  }
+}

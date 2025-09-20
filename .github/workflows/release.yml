@@ -51,25 +51,68 @@ jobs:
         run: |
           echo "📦 Creating mod package..."
 
-          # Create mod directory structure
-          mkdir -p khaoslib
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          MOD_DIR="khaoslib_$VERSION"
+
+          # Create mod directory structure with proper versioned name
+          mkdir -p "$MOD_DIR"
 
           # Copy mod files (exclude development files)
-          cp *.lua khaoslib/ 2>/dev/null || true
-          cp info.json khaoslib/
-          cp changelog.txt khaoslib/
-          cp LICENSE khaoslib/
-          cp README.md khaoslib/
+          cp *.lua "$MOD_DIR/" 2>/dev/null || true
+          cp info.json "$MOD_DIR/"
+          cp changelog.txt "$MOD_DIR/"
+          cp LICENSE "$MOD_DIR/"
+          cp README.md "$MOD_DIR/"
 
-          # Copy docs if they exist
-          if [ -d "docs" ]; then
-            cp -r docs khaoslib/
+          # Copy thumbnail if it exists
+          if [ -f "thumbnail.png" ]; then
+            cp thumbnail.png "$MOD_DIR/"
+            echo "✅ Included thumbnail.png"
           fi
 
-          # Create zip file
-          zip -r khaoslib.zip khaoslib/
+          # Copy docs directory if it exists
+          if [ -d "docs" ]; then
+            cp -r docs "$MOD_DIR/"
+            echo "✅ Included docs directory"
+          fi
 
-          echo "✅ Mod package created: khaoslib.zip"
+          # Create versioned zip file
+          ZIP_NAME="khaoslib_$VERSION.zip"
+          zip -r "$ZIP_NAME" "$MOD_DIR/"
+
+          echo "✅ Mod package created: $ZIP_NAME"
+
+      - name: Verify Package Contents
+        run: |
+          echo "🔍 Verifying package contents..."
+
+          VERSION=${GITHUB_REF#refs/tags/v}
+          ZIP_NAME="khaoslib_$VERSION.zip"
+
+          # List contents of the zip file
+          echo "📁 Package contents:"
+          unzip -l "$ZIP_NAME"
+
+          # Verify essential files are present
+          if unzip -l "$ZIP_NAME" | grep -q "info.json"; then
+            echo "✅ info.json included"
+          else
+            echo "❌ info.json missing"
+            exit 1
+          fi
+
+          if unzip -l "$ZIP_NAME" | grep -q "thumbnail.png"; then
+            echo "✅ thumbnail.png included"
+          else
+            echo "⚠️  thumbnail.png not found (optional)"
+          fi
+
+          if unzip -l "$ZIP_NAME" | grep -q "docs/"; then
+            echo "✅ docs directory included"
+          else
+            echo "⚠️  docs directory not found (optional)"
+          fi
 
       - name: Extract Release Notes
         id: release_notes
@@ -79,21 +122,72 @@ jobs:
           # Extract the latest version's changes from changelog.txt
           VERSION=${GITHUB_REF#refs/tags/v}
 
-          # Create release notes
-          echo "# khaoslib $VERSION" > release_notes.md
-          echo "" >> release_notes.md
-          echo "## Changes" >> release_notes.md
+          # Extract base release notes and get line numbers
+          awk "/Version: $VERSION/,/^---/" changelog.txt | \
+            head -n -1 | tail -n +3 > raw_changelog.tmp
 
-          # Extract changes for this version from changelog.txt
-          awk "/Version: $VERSION/,/^---/" changelog.txt | head -n -1 | tail -n +2 >> release_notes.md
+          # Find the starting line number of this version in the original file
+          VERSION_LINE=$(grep -n "Version: $VERSION" changelog.txt | cut -d: -f1)
+          START_LINE=$((VERSION_LINE + 2))  # Skip version line and date line
 
-          echo "✅ Release notes prepared"
+          echo "📋 Version starts at line $START_LINE in changelog.txt"
+
+          # Process each line and add PR references using git blame
+          line_num=$START_LINE
+          > release_notes.md
+
+          while IFS= read -r line; do
+            if [[ $line == "  "[A-Z]*":" ]]; then
+              # Category header
+              category=$(echo "$line" | sed 's/^  \([A-Z][a-zA-Z]*\):$/### \1/')
+              echo "$category" >> release_notes.md
+            elif [[ $line == "    - "* ]]; then
+              # Feature line - get PR reference from git blame
+              feature_text="${line#    - }"
+
+              # Use git blame to find the commit that last modified this line
+              blame_info=$(git blame -L${line_num},${line_num} changelog.txt 2>/dev/null || echo "")
+
+              if [ -n "$blame_info" ]; then
+                # Extract commit hash from blame output
+                commit_hash=$(echo "$blame_info" | awk '{print $1}' | sed 's/^\^//')
+
+                # Get the commit message for this hash
+                commit_msg=$(git log --format=%s -n 1 "$commit_hash" 2>/dev/null || echo "")
+
+                # Extract PR number from commit message
+                pr_ref=$(echo "$commit_msg" | grep -oE '\(#[0-9]+\)' | head -1)
+
+                if [ -n "$pr_ref" ]; then
+                  echo "- $feature_text $pr_ref" >> release_notes.md
+                  echo "  📎 Line $line_num -> $pr_ref (commit: ${commit_hash:0:7})"
+                else
+                  echo "- $feature_text" >> release_notes.md
+                fi
+              else
+                echo "- $feature_text" >> release_notes.md
+              fi
+            elif [[ -n "$line" ]]; then
+              # Other non-empty lines
+              echo "$line" >> release_notes.md
+            else
+              # Empty lines
+              echo "" >> release_notes.md
+            fi
+
+            line_num=$((line_num + 1))
+          done < raw_changelog.tmp
+
+          # Clean up
+          rm -f raw_changelog.tmp
+
+          echo "✅ Release notes prepared with git blame PR references"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           body_path: release_notes.md
-          files: khaoslib.zip
+          files: khaoslib_*.zip
           draft: false
           prerelease: false
         env:

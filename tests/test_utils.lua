@@ -61,7 +61,20 @@ end
 --- @return table The loaded module
 function test_utils.load_module(module_name)
   test_utils.setup_test_environment()
-  return require(module_name)
+  -- Try multiple possible paths to handle both running from tests/ and from workspace root
+  local possible_paths = {
+    "../" .. module_name .. ".lua",  -- When running from tests/ directory
+    module_name .. ".lua"            -- When running from workspace root
+  }
+
+  for _, module_path in ipairs(possible_paths) do
+    local chunk, err = loadfile(module_path)
+    if chunk then
+      return chunk(module_name)
+    end
+  end
+
+  error("Failed to load module " .. module_name .. ": module not found in any expected location")
 end
 
 --- Creates test data for recipes

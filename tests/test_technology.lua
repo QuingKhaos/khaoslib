@@ -1,5 +1,6 @@
 -- Test file for khaoslib technology module
-package.path = package.path .. ";tests/?.lua"
+-- Handle both running from tests/ directory and from workspace root
+package.path = "tests/?.lua;" .. package.path .. ";?.lua"
 local luaunit = require('luaunit')
 local test_utils = require('test_utils')
 
@@ -174,7 +175,7 @@ function TestTechnologyModule:test_copy_technology()
     name = "original-tech",
     prerequisites = {"automation"},
     effects = {{type = "unlock-recipe", recipe = "iron-plate"}},
-    unit = {count = 50, time = 15}
+    unit = {count = 50, time = 15, ingredients = {}}
   }
 
   local original = khaoslib_technology:load("original-tech")

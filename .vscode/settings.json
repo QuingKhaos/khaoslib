@@ -3,9 +3,6 @@
   "Lua.runtime.special": {
     "require": "require"
   },
-  "Lua.workspace.library": [
-    "${workspaceFolder}",
-  ],
   "Lua.workspace.ignoreDir": [
     ".vscode",
     "tests"

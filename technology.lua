@@ -12,6 +12,7 @@ if type(data) == "nil" or _G.util ~= nil then
   module_loader = require("module_loader")
 else
   -- Factorio environment
+  --- @diagnostic disable-next-line: different-requires
   module_loader = require("__khaoslib__.module_loader")
 end
 
@@ -668,6 +669,7 @@ function khaoslib_technology:set_science_packs(science_packs)
   if type(science_packs) ~= "table" then error("science_packs parameter: Expected table, got " .. type(science_packs), 2) end
 
   if not self.technology.unit then
+    --- @diagnostic disable-next-line: missing-fields
     self.technology.unit = {}
   end
 
@@ -734,6 +736,7 @@ function khaoslib_technology:add_science_pack(science_pack)
   if not science_pack[2] then error("science_pack parameter: Missing science pack amount at index 2", 2) end
 
   if not self.technology.unit then
+    --- @diagnostic disable-next-line: missing-fields
     self.technology.unit = {}
   end
 
@@ -842,6 +845,7 @@ end
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 function khaoslib_technology:clear_science_packs()
   if not self.technology.unit then
+    --- @diagnostic disable-next-line: missing-fields
     self.technology.unit = {}
   end
 

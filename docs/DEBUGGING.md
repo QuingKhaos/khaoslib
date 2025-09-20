@@ -1,6 +1,7 @@
 # Debugging Guide for khaoslib
 
-This guide covers debugging techniques for khaoslib development, including unit test debugging, module development debugging, and troubleshooting common issues.
+This guide covers debugging techniques for khaoslib development, including unit
+test debugging, module development debugging, and troubleshooting common issues.
 
 ## 🛠️ Prerequisites
 
@@ -157,7 +158,7 @@ print("After:", table.concat(test_list, ", "))
 
 If modules fail to load, check:
 
-1. **Environment Detection**:
+**Environment Detection**:
 
 ```lua
 -- Add to top of module file for debugging
@@ -167,7 +168,7 @@ print("  _G.util exists:", _G.util ~= nil)
 print("  Module name (...):", ...)
 ```
 
-2. **Dependency Loading**:
+**Dependency Loading**:
 
 ```lua
 -- Debug dependency loading
@@ -211,27 +212,27 @@ print("Copy still has:", copied.b.c) -- Should be 2
 
 **Symptoms**:
 
-```
+```powershell
 lua.exe: module 'test_utils' not found
 ```
 
 **Solutions**:
 
-1. Check `package.path` is set correctly:
+- Check `package.path` is set correctly:
 
 ```lua
 print("Package path:", package.path)
 -- Should include ";tests/?.lua" or ";./?.lua"
 ```
 
-2. Verify file exists and has correct name
-3. Run from correct directory (project root)
+- Verify file exists and has correct name
+- Run from correct directory (project root)
 
 ### Issue 2: Mock Environment Not Working
 
 **Symptoms**:
 
-```
+```plaintext
 attempt to index a nil value (global 'data')
 ```
 
@@ -252,7 +253,7 @@ assert(_G.util, "_G.util not set up")
 
 **Solutions**:
 
-1. Check for test isolation issues:
+- Check for test isolation issues:
 
 ```lua
 function TestModule:setUp()
@@ -262,8 +263,8 @@ function TestModule:setUp()
 end
 ```
 
-2. Look for global variable pollution
-3. Check for module caching issues
+- Look for global variable pollution
+- Check for module caching issues
 
 ### Issue 4: Debugger Not Stopping at Breakpoints
 
@@ -421,7 +422,7 @@ function debug_logger.log(category, message, ...)
       end
     end
 
-    print(string.format("[DEBUG:%s] %s %s",
+    log(string.format("[DEBUG:%s] %s %s",
       category,
       message,
       table.concat(formatted_args, " ")
@@ -445,4 +446,6 @@ Enable with: `set KHAOSLIB_DEBUG=1` (Windows) or `export KHAOSLIB_DEBUG=1` (Linu
 
 ---
 
-This debugging guide should help you efficiently identify and fix issues in khaoslib development. Remember: good debugging is systematic, patient, and methodical! 🎯
+This debugging guide should help you efficiently identify and fix issues in
+khaoslib development. Remember: good debugging is systematic, patient, and
+methodical! 🎯

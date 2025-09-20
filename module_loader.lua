@@ -14,7 +14,15 @@ end
 --- @return table The loaded module
 function module_loader.load_khaoslib_module(module_name)
   if module_loader.is_testing_environment() then
-    return require(module_name)
+    -- In testing environment, first try current directory, then parent directory
+    local paths = {module_name .. ".lua", "../" .. module_name .. ".lua"}
+    for _, module_path in ipairs(paths) do
+      local chunk, err = loadfile(module_path)
+      if chunk then
+        return chunk(module_name)
+      end
+    end
+    error("Failed to load khaoslib module " .. module_name .. ": module not found in current or parent directory")
   else
     return require("__khaoslib__." .. module_name)
   end

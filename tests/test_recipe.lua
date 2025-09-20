@@ -1,5 +1,6 @@
 -- Test file for khaoslib recipe module
-package.path = package.path .. ";tests/?.lua"
+-- Handle both running from tests/ directory and from workspace root
+package.path = "tests/?.lua;" .. package.path .. ";?.lua"
 local luaunit = require('luaunit')
 local test_utils = require('test_utils')
 

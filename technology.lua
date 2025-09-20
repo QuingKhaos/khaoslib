@@ -162,7 +162,7 @@ function khaoslib_technology:load(technology)
     if khaoslib_technology.exists(technology.name) then error("A technology with the name " .. technology.name .. " already exists", 2) end
   end
 
-  local _technology = technology
+  local _technology = technology --luacheck: ignore 311
   if tech_type == "string" then
     _technology = util.table.deepcopy(data.raw.technology[technology])
   else

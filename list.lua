@@ -1,10 +1,6 @@
 -- Handle both Factorio and testing environments
 if ... ~= "__khaoslib__.list" and ... ~= "list" then
-  if ... == "__khaoslib__.list" then
-    return require("__khaoslib__.list")
-  else
-    -- In testing environment, just continue with this file
-  end
+  -- In testing environment, just continue with this file
 end
 
 -- Load dependencies with shared module loader

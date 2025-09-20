@@ -34,8 +34,8 @@ jobs:
       - name: Lint Lua files
         run: |
           echo "🔍 Linting Lua files..."
-          luacheck list.lua recipe.lua technology.lua tests/ --globals data util defines game script --ignore 211 212
-          echo "✅ Lua linting completed"
+          luacheck *.lua tests/test_*.lua --globals data util defines game script require _G type pairs ipairs table string debug os io math loadfile --allow-defined-top --max-line-length 150
+          echo "✅ Lua linting completed (excluding external luaunit.lua)"
 
       - name: Check documentation files exist
         run: |

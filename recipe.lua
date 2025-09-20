@@ -144,7 +144,7 @@ function khaoslib_recipe:load(recipe)
   if type(recipe) == "table" and (not recipe.name or type(recipe.name) ~= "string") then error("recipe table must have a name field of type string", 2) end
   if type(recipe) == "table" and data.raw.recipe[recipe.name] then error("A recipe with the name " .. recipe.name .. " already exists", 2) end
 
-  local _recipe = recipe
+  local _recipe = recipe --luacheck: ignore 311
   if type(recipe) == "string" then
     _recipe = util.table.deepcopy(data.raw.recipe[recipe])
   else

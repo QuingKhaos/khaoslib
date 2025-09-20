@@ -1,8 +1,10 @@
 {
   "recommendations": [
     "editorconfig.editorconfig",
+    "formulahendry.code-runner",
     "justarandomgeek.factoriomod-debug",
     "sumneko.lua",
+    "tomblind.local-lua-debugger-vscode",
     "usernamehw.errorlens"
   ]
 }

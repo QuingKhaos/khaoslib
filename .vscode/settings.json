@@ -1,4 +1,15 @@
 {
+  "Lua.runtime.version": "Lua 5.2",
+  "Lua.runtime.special": {
+    "require": "require"
+  },
+  "Lua.workspace.library": [
+    "${workspaceFolder}",
+  ],
+  "Lua.workspace.ignoreDir": [
+    ".vscode",
+    "tests"
+  ],
   "Lua.diagnostics.globals": [
     "commands",
     "data",
@@ -15,9 +26,21 @@
     "serpent",
     "settings",
     "storage",
+    "util",
+    "luaunit",
+    "os"
   ],
   "Lua.diagnostics.disable": [
-    "lowercase-global"
+    "lowercase-global",
+    "undefined-global",
+    "missing-parameter",
+    "redundant-parameter"
   ],
-  "Lua.runtime.version": "Lua 5.2"
+  "Lua.completion.enable": true,
+  "Lua.completion.autoRequire": false,
+  "Lua.hint.enable": true,
+  "Lua.hint.paramType": true,
+  "Lua.hint.setType": true,
+  "Lua.format.enable": false,
+  "Lua.telemetry.enable": false
 }

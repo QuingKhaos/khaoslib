@@ -25,6 +25,17 @@ Date: ????
     - Adds recipe:add_unlock() and recipe:remove_unlock() methods for managing technology unlock relationships directly from recipes.
     - Implements automatic technology state tracking and deferred commit system for recipe-technology integration.
     - Provides deep copy safety across module boundaries with independent technology manipulator instances per recipe.
+  Modding:
+    - Establishes comprehensive Lua unit testing infrastructure with LuaUnit framework integration.
+    - Implements complete VS Code testing environment with debug configurations, tasks, and extension recommendations.
+    - Provides shared testing utilities (test_utils.lua) with mock Factorio environment and helper functions.
+    - Creates unified module loading system (module_loader.lua) supporting both Factorio and testing environments.
+    - Adds full debugging support with Local Lua Debugger integration, breakpoints, and step-through debugging.
+    - Includes comprehensive test suites for all modules: 48 total tests (30 list tests, 9 recipe tests, 9 technology tests).
+    - Provides VS Code tasks for test execution: Run All Tests, Run Current Test, and module-specific test runners.
+    - Implements dual-environment module loading with automatic environment detection for seamless testing.
+    - Establishes testing documentation (TESTING_SETUP.md) and debugging guide (DEBUGGING.md) for contributors.
+    - Deduplicates testing setup code through shared utilities, reducing maintenance overhead and improving consistency.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 2025-09-19

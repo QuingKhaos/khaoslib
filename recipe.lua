@@ -1,10 +1,30 @@
-if ... ~= "__khaoslib__.recipe" then
-  return require("__khaoslib__.recipe")
+-- Handle both Factorio and testing environments
+if ... ~= "__khaoslib__.recipe" and ... ~= "recipe" then
+  if ... == "__khaoslib__.recipe" then
+    return require("__khaoslib__.recipe")
+  end
 end
 
-local khaoslib_list = require("__khaoslib__.list")
-local khaoslib_technology = require("__khaoslib__.technology")
-local util = require("util")
+-- Load dependencies with shared module loader
+local module_loader
+if type(data) == "nil" or _G.util ~= nil then
+  -- Testing environment
+  module_loader = require("module_loader")
+else
+  -- Factorio environment
+  module_loader = require("__khaoslib__.module_loader")
+end
+
+local khaoslib_list = module_loader.load_khaoslib_module("list")
+local util = module_loader.load_util()
+
+-- Technology module needs special handling for testing
+local khaoslib_technology
+if module_loader.is_testing_environment() then
+  khaoslib_technology = module_loader.create_mock_technology()
+else
+  khaoslib_technology = module_loader.load_khaoslib_module("technology")
+end
 
 -- #region Basic manipulation methods
 -- Core methods for creating and working with recipe manipulation objects.

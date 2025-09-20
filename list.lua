@@ -1,8 +1,23 @@
-if ... ~= "__khaoslib__.list" then
-  return require("__khaoslib__.list")
+-- Handle both Factorio and testing environments
+if ... ~= "__khaoslib__.list" and ... ~= "list" then
+  if ... == "__khaoslib__.list" then
+    return require("__khaoslib__.list")
+  else
+    -- In testing environment, just continue with this file
+  end
 end
 
-local util = require("util")
+-- Load dependencies with shared module loader
+local module_loader
+if type(data) == "nil" or _G.util ~= nil then
+  -- Testing environment
+  module_loader = require("module_loader")
+else
+  -- Factorio environment  
+  module_loader = require("__khaoslib__.module_loader")
+end
+
+local util = module_loader.load_util()
 
 --- Reusable utilities for list manipulation to provide a consistent list manipulation behavior.
 ---

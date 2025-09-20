@@ -1,9 +1,22 @@
-if ... ~= "__khaoslib__.technology" then
-  return require("__khaoslib__.technology")
+-- Handle both Factorio and testing environments
+if ... ~= "__khaoslib__.technology" and ... ~= "technology" then
+  if ... == "__khaoslib__.technology" then
+    return require("__khaoslib__.technology")
+  end
 end
 
-local khaoslib_list = require("__khaoslib__.list")
-local util = require("util")
+-- Load dependencies with shared module loader
+local module_loader
+if type(data) == "nil" or _G.util ~= nil then
+  -- Testing environment
+  module_loader = require("module_loader")
+else
+  -- Factorio environment
+  module_loader = require("__khaoslib__.module_loader")
+end
+
+local khaoslib_list = module_loader.load_khaoslib_module("list")
+local util = module_loader.load_util()
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with technology manipulation objects.
@@ -110,7 +123,7 @@ local khaoslib_technology = {}
 function khaoslib_technology:load(technology)
   local tech_type = type(technology)
   if tech_type ~= "string" and tech_type ~= "table" then error("technology parameter: Expected string or table , got " .. tech_type, 2) end
-  
+
   if tech_type == "string" then
     if not khaoslib_technology.exists(technology) then error("No such technology: " .. technology, 2) end
   else -- tech_type == "table"

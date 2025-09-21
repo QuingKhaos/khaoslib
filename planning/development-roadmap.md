@@ -50,8 +50,6 @@ many more intermediate releases (v0.2.1, v0.2.2, etc.) to support active mod dev
 - [ ] **Changelog Finalization**: Set release date and complete changelog entries
 - [ ] **Version Alignment**: Verify info.json, README.md, and all references are consistent
 
-**Target Release**: Q4 2025
-
 ## Intermediate Releases (v0.2.1 - v0.2.x)
 
 **Expected**: Many incremental releases between major feature versions
@@ -66,14 +64,88 @@ releases between the major feature versions listed below. These releases will in
 
 **Release Frequency**: Multiple releases per week/day as needed for active development
 
-## v0.3.0: Static Utility Functions Enhancement
+## v0.3.0: Functional Replacement API
+
+**Theme**: Dynamic replacement functions with callback support
+**Priority**: High - Addresses critical pain points in mod compatibility workflows
+**Rationale**: Based on extensive analysis of Pyanodons/AAI compatibility patterns, functional replacements
+dramatically reduce boilerplate and improve maintainability for dynamic ingredient/prerequisite transformations.
+**Design Document**: `planning/functional-replacement-api.md`
+
+### v0.3.0 Features
+
+#### High Priority - Critical developer experience improvement
+
+- [ ] **Enhanced List Module Foundation**
+
+  ```lua
+  -- Core functional replacement support in khaoslib_list.replace()
+  khaoslib_list.replace(ingredients, function(ingredient)
+      ingredient.name = "electronic-circuit"
+      ingredient.amount = ingredient.amount * 2  -- Double amount for balance
+      return ingredient
+  end, "processing-unit")
+  ```
+
+- [ ] **Recipe Module Functional Replacements** (Automatic inheritance from list module)
+
+  ```lua
+  -- Dynamic ingredient replacement based on original properties
+  recipe:replace_ingredient("processing-unit", function(ingredient)
+      ingredient.name = "electronic-circuit"
+      return ingredient  -- Preserves original amount automatically
+  end)
+
+  -- Conditional transformations
+  recipe:replace_ingredient("advanced-circuit", function(ingredient)
+      if ingredient.amount >= 5 then
+          ingredient.name = "processing-unit"
+          ingredient.amount = math.ceil(ingredient.amount / 2)
+      end
+      return ingredient
+  end)
+  ```
+
+- [ ] **Technology Module Functional Replacements** (Automatic inheritance from list module)
+
+  ```lua
+  -- Dynamic prerequisite replacement for overhaul mod compatibility
+  technology:replace_prerequisite("advanced-electronics-2", function(prereq)
+      return "electronics"  -- Simplify for early game accessibility
+  end)
+
+  -- Science pack cost adjustments based on difficulty settings
+  technology:replace_science_pack("space-science-pack", function(science_pack)
+      if settings.startup["difficulty-mode"].value == "easy" then
+          science_pack.amount = math.ceil(science_pack.amount * 0.5)
+      end
+      return science_pack
+  end)
+  ```
+
+### v0.3.0 Implementation Strategy
+
+- **Architectural Advantage**: Only requires enhancement to `khaoslib_list.replace()` function
+- **Zero Breaking Changes**: Recipe and technology modules automatically inherit functionality through delegation
+- **Documentation Updates**: Update `@param` annotations to reflect functional parameter support
+- **Performance Optimized**: <5% overhead for function-based replacements vs table-based replacements
+
+### v0.3.0 Key Benefits
+
+- **Dramatically Improved Ergonomics**: Reduce 10+ line operations to 3-5 lines
+- **Commit-Based Architecture Synergy**: Access original recipe data even after remove operations
+- **Complex Consolidation Support**: Enable CompaktCircuit-style multi-ingredient consolidation patterns
+- **Maintainable**: Automatically adapts when base game recipes change
+- **Minimal Implementation**: Single point of implementation reduces maintenance burden
+
+## v0.4.0: Static Utility Functions Enhancement
 
 **Theme**: Complementary API for analysis and discovery use cases
 **Rationale**: Based on real-world analysis of Factorio modding ecosystem (Pyanodons, Krastorio2), static
 utilities provide value for analysis-heavy operations while preserving the manipulator-first design for
 modifications.
 
-### v0.3.0 Features
+### v0.4.0 Features
 
 #### High Priority - Proven demand from ecosystem analysis
 
@@ -105,21 +177,19 @@ modifications.
     :get_all()
   ```
 
-### v0.3.0 Implementation Strategy
+### v0.4.0 Implementation Strategy
 
 - **Backward Compatibility**: Static functions are additive, no breaking changes to existing manipulator API
 - **Performance Focus**: Direct data.raw access for read-only operations
 - **Consistent API**: Follow established khaoslib patterns and terminology
 - **Comprehensive Testing**: Unit tests for all static utility functions
 
-**Target Release**: Q1 2026
-
-## v0.4.0: Advanced List Operations
+## v0.5.0: Advanced List Operations
 
 **Theme**: Enhanced data manipulation and aggregation capabilities
 **Rationale**: Based on module-improvements.md analysis showing demand for statistical and query operations
 
-### v0.4.0 Features
+### v0.5.0 Features
 
 #### Medium Priority - Quality of life improvements for complex data manipulation
 
@@ -148,21 +218,19 @@ modifications.
   local unique_to_recipe1 = khaoslib_list.difference(recipe1_ingredients, recipe2_ingredients)
   ```
 
-### v0.4.0 Implementation Strategy
+### v0.5.0 Implementation Strategy
 
 - **Non-Breaking**: All new functions, existing list API unchanged
 - **Functional Programming Style**: Consistent with current list module design
 - **Performance Optimized**: Efficient algorithms for large prototype datasets
 
-**Target Release**: Q2 2026
-
-## v0.5.0: Copy-on-Write Optimization
+## v0.6.0: Copy-on-Write Optimization
 
 **Theme**: Memory optimization for large-scale modding operations
 **Rationale**: Based on copy-on-write-optimization.md analysis, provides significant memory savings for
 read-heavy workloads in complex modpacks
 
-### v0.5.0 Features
+### v0.6.0 Features
 
 #### Low-Medium Priority - Performance optimization for advanced use cases
 
@@ -183,21 +251,19 @@ read-heavy workloads in complex modpacks
   -- {is_cow: true, copy_count: 0, memory_saved: 1024}
   ```
 
-### v0.5.0 Implementation Challenges
+### v0.6.0 Implementation Challenges
 
 - **Complexity**: Significant internal architecture changes required
 - **Testing**: Comprehensive testing for CoW state transitions
 - **Debugging**: Enhanced error reporting for CoW-related issues
 - **Backward Compatibility**: Must be transparent to existing code
 
-**Target Release**: Q3 2026
-
-## v0.6.0: Multi-Prototype Support
+## v0.7.0: Multi-Prototype Support
 
 **Theme**: Extend manipulator pattern to other prototype types
 **Rationale**: Based on Pyanodons analysis showing ITEM, FLUID, ENTITY patterns alongside RECIPE/TECHNOLOGY
 
-### v0.6.0 Features
+### v0.7.0 Features
 
 #### Medium Priority - Ecosystem demand for consistent prototype manipulation
 
@@ -228,20 +294,18 @@ read-heavy workloads in complex modpacks
     :commit()
   ```
 
-### v0.6.0 Implementation Strategy
+### v0.7.0 Implementation Strategy
 
 - **Proven Pattern**: Apply successful recipe/technology manipulator architecture
 - **Selective Implementation**: Focus on most commonly manipulated entity types
 - **Consistent API**: Maintain khaoslib design patterns and terminology
 
-**Target Release**: Q4 2026
-
-## v0.7.0: Advanced Integration Features
+## v0.8.0: Advanced Integration Features
 
 **Theme**: Cross-prototype relationships and complex operations
 **Rationale**: Support for overhaul-level modding with complex interdependencies
 
-### v0.7.0 Features
+### v0.8.0 Features
 
 #### Low Priority - Advanced use cases for overhaul mods
 
@@ -277,14 +341,12 @@ read-heavy workloads in complex modpacks
     :commit()
   ```
 
-**Target Release**: Q1 2027
-
-## v0.8.0: Developer Experience Enhancement
+## v0.9.0: Developer Experience Enhancement
 
 **Theme**: Improved debugging, validation, and development workflow
 **Rationale**: Better tooling for mod developers using khaoslib
 
-### v0.8.0 Features
+### v0.9.0 Features
 
 #### Low-Medium Priority - Developer quality of life
 
@@ -303,14 +365,12 @@ read-heavy workloads in complex modpacks
   - Integration with VS Code debugging tools
   - Automated testing helpers for mod developers
 
-**Target Release**: Q2 2027
-
-## v0.9.0: Stability and Polish
+## v0.10.0: Stability and Polish
 
 **Theme**: API stabilization preparing for v1.0.0
 **Rationale**: Final refinements before committing to stable API
 
-### v0.9.0 Features
+### v0.10.0 Features
 
 #### High Priority - Pre-1.0 stabilization
 
@@ -320,13 +380,11 @@ read-heavy workloads in complex modpacks
 - [ ] **Breaking Changes**: Final breaking changes needed for API consistency
 - [ ] **Migration Guides**: Comprehensive upgrade guides for 0.x -> 1.0 transition
 
-**Target Release**: Q3 2027
-
-## v0.10.0+: Additional Feature Development
+## v0.11.0+: Additional Feature Development
 
 **Expected**: Continued 0.x development as needed
 
-The roadmap may extend beyond v0.9.0 with additional 0.x versions (v0.10.0, v0.11.0, etc.) based on:
+The roadmap may extend beyond v0.10.0 with additional 0.x versions (v0.11.0, v0.12.0, etc.) based on:
 
 - Community feature requests and needs
 - New Factorio modding capabilities or API changes
@@ -476,4 +534,4 @@ Each release must pass:
 ---
 
 *This roadmap is a living document, updated as needed based on active development needs, community
-feedback, and Factorio ecosystem evolution. Last updated: September 2025*
+feedback, and Factorio ecosystem evolution.*

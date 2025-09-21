@@ -5,6 +5,7 @@
   },
   "Lua.workspace.ignoreDir": [
     ".vscode",
+    "planning",
     "tests"
   ],
   "Lua.diagnostics.globals": [

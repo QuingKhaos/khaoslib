@@ -24,7 +24,7 @@ with actual Factorio modding patterns.
 
 ### Current API Philosophy (Well-Designed for Modding)
 
-Khaoslib was designed with a "manipulator-first" approach where all operations go through
+khaoslib was designed with a "manipulator-first" approach where all operations go through
 manipulator objects, which aligns well with Factorio modding patterns:
 
 ```lua

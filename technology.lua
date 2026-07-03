@@ -309,16 +309,16 @@ end
 --- end, "new-base-tech", {all = true})
 --- ```
 ---
---- @param compare (fun(old_prerequisite: data.TechnologyID): boolean)|data.TechnologyID A comparison function or prerequisite name to match.
---- @param new_prerequisite data.TechnologyID The new prerequisite technology name to replace with.
+--- @param compare (fun(prerequisite: data.TechnologyID): boolean)|data.TechnologyID A comparison function or prerequisite name to match.
+--- @param replacement (fun(prerequisite: data.TechnologyID): data.TechnologyID)|data.TechnologyID The new prerequisite technology name to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): If true, replaces all matching prerequisites instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If compare is not a string or function, or new_prerequisite is not a string.
-function khaoslib_technology:replace_prerequisite(compare, new_prerequisite, options)
-  if type(new_prerequisite) ~= "string" then error("new_prerequisite parameter: Expected string, got " .. type(new_prerequisite), 2) end
+--- @throws If compare is not a string or function, or replacement is not a string or function.
+function khaoslib_technology:replace_prerequisite(compare, replacement, options)
+  if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
 
-  khaoslib_list.replace(self.technology.prerequisites, new_prerequisite, compare, options)
+  khaoslib_list.replace(self.technology.prerequisites, replacement, compare, options)
 
   return self
 end
@@ -426,16 +426,16 @@ end
 --- ```
 ---
 --- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it should be replaced.
---- @param new_effect data.Modifier The new effect to add. See `data.Modifier` for valid effect types.
+--- @param replacement (fun(effect: data.Modifier): data.Modifier)|data.Modifier The new effect to add. See `data.Modifier` for valid effect types.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If compare_fn is not a function or if new_effect is not a table.
-function khaoslib_technology:replace_effect(compare_fn, new_effect, options)
+--- @throws If compare_fn is not a function or if replacement is not a table or function.
+function khaoslib_technology:replace_effect(compare_fn, replacement, options)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
-  if type(new_effect) ~= "table" then error("new_effect parameter: Expected table, got " .. type(new_effect), 2) end
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
 
-  khaoslib_list.replace(self.technology.effects, new_effect, compare_fn, options)
+  khaoslib_list.replace(self.technology.effects, replacement, compare_fn, options)
 
   return self
 end
@@ -557,21 +557,29 @@ end
 --- ```
 ---
 --- @param compare (fun(effect: data.Modifier): boolean)|data.RecipeID An effect comparison function or recipe name to match.
---- @param new_recipe data.RecipeID The name of the new recipe to unlock.
+--- @param replacement (fun(recipe: data.Modifier): data.Modifier)|data.RecipeID The name of the new recipe to unlock or modified effect table from the function callback.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching unlock-recipe effects instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If compare is not a string or function, or new_recipe is not a string.
-function khaoslib_technology:replace_unlock_recipe(compare, new_recipe, options)
+--- @throws If compare is not a string or function, or replacement is not a string or function.
+function khaoslib_technology:replace_unlock_recipe(compare, replacement, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
-  if type(new_recipe) ~= "string" then error("new_recipe parameter: Expected string, got " .. type(new_recipe), 2) end
+  if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
 
   local compare_fn = compare
   if type(compare) == "string" then
     compare_fn = function(existing) return existing.type == "unlock-recipe" and existing.recipe == compare end
   end
 
-  return self:replace_effect(compare_fn --[[@as fun(effect: data.Modifier): boolean]], {type = "unlock-recipe", recipe = new_recipe}, options)
+  local replacement_fn = replacement
+  if type(replacement) == "string" then
+    replacement_fn = function(existing)
+      existing.recipe = replacement
+      return existing
+    end
+  end
+
+  return self:replace_effect(compare_fn --[[@as fun(effect: data.Modifier): boolean]], replacement_fn --[[@as fun(effect: data.Modifier): data.Modifier]], options)
 end
 
 --- Returns a list of all science pack ingredients for the given technology.
@@ -731,18 +739,20 @@ end
 --- end, {type = "item", name = "universal-science-pack", amount = 2}, {all = true})
 --- ```
 ---
---- @param compare fun(ingredients: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
---- @param new_ingredient data.ResearchIngredient The new science pack to replace with.
+--- @param compare fun(ingredient: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
+--- @param replacement (fun(ingredient: data.ResearchIngredient): data.ResearchIngredient)|data.ResearchIngredient The new science pack to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching science packs instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
---- @throws If compare is not a string or function, or new_ingredient is not a table or isn't an ingredient, or unit is not defined on the technology.
-function khaoslib_technology:replace_science_pack(compare, new_ingredient, options)
+--- @throws If compare is not a string or function, or replacement is not a function or not a table or isn't an ingredient, or unit is not defined on the technology.
+function khaoslib_technology:replace_science_pack(compare, replacement, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
-  if type(new_ingredient) ~= "table" then error("new_ingredient parameter: Expected table, got " .. type(new_ingredient), 2) end
-  if not new_ingredient[1] then error("new_ingredient parameter: Missing science pack name at index 1", 2) end
-  if not new_ingredient[2] then error("new_ingredient parameter: Missing science pack amount at index 2", 2) end
+  if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement[1] then error("replacement parameter: Missing science pack name at index 1", 2) end
+    if not replacement[2] then error("replacement parameter: Missing science pack amount at index 2", 2) end
+  end
 
   if not self.technology.unit then error("technology.unit is not defined", 2) end
   if not self.technology.unit.ingredients then
@@ -754,7 +764,7 @@ function khaoslib_technology:replace_science_pack(compare, new_ingredient, optio
     compare_fn = function(existing) return existing[1] == compare end
   end
 
-  khaoslib_list.replace(self.technology.unit.ingredients, new_ingredient, compare_fn, options)
+  khaoslib_list.replace(self.technology.unit.ingredients, replacement, compare_fn, options)
 
   return self
 end

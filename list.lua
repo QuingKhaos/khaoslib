@@ -214,7 +214,7 @@ end
 --- @class ListReplaceOptions
 --- @field all boolean? If true, replaces all matching items instead of just the first (default: false)
 
---- Replaces matching items in a list with a new item.
+--- Replaces matching items in a list with a new item or the result of a function callback, called with the old item.
 ---
 --- By default, replaces only the first item that matches the comparison criteria.
 --- When `all` is true, replaces all matching items in a single call. The new item
@@ -234,8 +234,9 @@ end
 --- khaoslib_list.replace(recipes, {name = "iron-plate", amount = 2}, function(r) return r.name == "iron-plate" end)
 --- ```
 ---
+--- @generic T : any
 --- @param list table|nil The list to modify (returns empty table if nil)
---- @param new_item any The new item to replace with (will be deep copied)
+--- @param new_item (fun(old_item: T): T)|T The new item to replace with (will be deep copied)
 --- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListReplaceOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, replaces all matching items instead of just the first
@@ -248,7 +249,11 @@ function khaoslib_list.replace(list, new_item, compare, options)
   local replace_all = options.all or false
 
   perform_list_operation(validated_list, compare_fn, function(i, item) --luacheck: ignore 212
-    validated_list[i] = util.table.deepcopy(new_item)
+    if type(new_item) == "function" then
+      validated_list[i] = util.table.deepcopy(new_item(util.table.deepcopy(item)))
+    else
+      validated_list[i] = util.table.deepcopy(new_item)
+    end
   end, replace_all)
 
   return validated_list

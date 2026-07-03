@@ -343,25 +343,27 @@ end
 --- ```
 ---
 --- @param compare (fun(ingredient: data.IngredientPrototype): boolean)|data.ItemID|data.FluidID A comparison function or ingredient name to match.
---- @param new_ingredient data.IngredientPrototype The new ingredient prototype to replace with.
+--- @param replacement (fun(ingredient: data.IngredientPrototype): data.IngredientPrototype)|data.IngredientPrototype The new ingredient prototype to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching ingredients instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
---- @throws If old_ingredient is not a string or function, or new_ingredient is not a table.
-function khaoslib_recipe:replace_ingredient(compare, new_ingredient, options)
+--- @throws If compare is not a string or function, or replacement is not a table or function.
+function khaoslib_recipe:replace_ingredient(compare, replacement, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
-  if type(new_ingredient) ~= "table" then error("new_ingredient parameter: Expected table, got " .. type(new_ingredient), 2) end
-  if not new_ingredient.type or type(new_ingredient.type) ~= "string" then error("new_ingredient parameter: Must have a type field of type string", 2) end
-  if not new_ingredient.name or type(new_ingredient.name) ~= "string" then error("new_ingredient parameter: Must have a name field of type string", 2) end
-  if not new_ingredient.amount or type(new_ingredient.amount) ~= "number" then error("new_ingredient parameter: Must have an amount field of type number", 2) end
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.type or type(replacement.type) ~= "string" then error("replacement parameter: Must have a type field of type string", 2) end
+    if not replacement.name or type(replacement.name) ~= "string" then error("replacement parameter: Must have a name field of type string", 2) end
+    if not replacement.amount or type(replacement.amount) ~= "number" then error("replacement parameter: Must have an amount field of type number", 2) end
+  end
 
   local compare_fn = compare
   if type(compare) == "string" then
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  khaoslib_list.replace(self.recipe.ingredients, new_ingredient, compare_fn, options)
+  khaoslib_list.replace(self.recipe.ingredients, replacement, compare_fn, options)
 
   return self
 end
@@ -574,25 +576,27 @@ end
 --- ```
 ---
 --- @param compare (fun(result: data.ProductPrototype): boolean)|data.ItemID|data.FluidID A comparison function or result name to match.
---- @param new_result data.ProductPrototype The new result prototype to replace with.
+--- @param replacement (fun(result: data.ProductPrototype): data.ProductPrototype)|data.ProductPrototype The new result prototype to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching results instead of just the first.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
---- @throws If old_result is not a string or function, or new_result is not a table.
-function khaoslib_recipe:replace_result(compare, new_result, options)
+--- @throws If old_result is not a string or function, or replacement is not a table or function.
+function khaoslib_recipe:replace_result(compare, replacement, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
-  if type(new_result) ~= "table" then error("new_result parameter: Expected table, got " .. type(new_result), 2) end
-  if not new_result.type or type(new_result.type) ~= "string" then error("new_result parameter: Must have a type field of type string", 2) end
-  if not new_result.name or type(new_result.name) ~= "string" then error("new_result parameter: Must have a name field of type string", 2) end
-  if not new_result.amount or type(new_result.amount) ~= "number" then error("new_result parameter: Must have an amount field of type number", 2) end
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.type or type(replacement.type) ~= "string" then error("replacement parameter: Must have a type field of type string", 2) end
+    if not replacement.name or type(replacement.name) ~= "string" then error("replacement parameter: Must have a name field of type string", 2) end
+    if not replacement.amount or type(replacement.amount) ~= "number" then error("replacement parameter: Must have an amount field of type number", 2) end
+  end
 
   local compare_fn = compare
   if type(compare) == "string" then
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  self.recipe.results = khaoslib_list.replace(self.recipe.results, new_result, compare_fn, options)
+  self.recipe.results = khaoslib_list.replace(self.recipe.results, replacement, compare_fn, options)
 
   return self
 end

@@ -86,7 +86,36 @@ function khaoslib_recipe:load(recipe)
   return obj
 end
 
---- Gets the raw data table of the recipe currently being manipulated.
+--- @diagnostic disable: invisible
+
+--- Internal helper function to resole the recipe from a string, recipe prototype data or a recipe manipulation object.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe to resolve.
+--- @return data.RecipePrototype resolved_recipe The resolved recipe prototype.
+--- @throws If the recipe cannot be resolved.
+local resolve = function(recipe)
+  if type(recipe) == "string" then
+    local result = data.raw.recipe[recipe]
+    if not result then
+      error("No such recipe: " .. recipe, 3)
+    end
+
+    return result
+  elseif type(recipe) == "table" then
+    if getmetatable(recipe) == khaoslib_recipe and recipe.recipe then
+      return recipe.recipe
+    elseif recipe.type == "recipe" and recipe.name then
+      return recipe --[[@as data.RecipePrototype]]
+    else
+      error("Invalid recipe table: expected manipulator or prototype with type='recipe' and name", 3)
+    end
+  else
+    error("Invalid recipe parameter: expected recipe name, prototype table, or recipe manipulator", 3)
+  end
+end
+
+--- @diagnostic enable: invisible
+
+--- Gets the raw prototype data of the recipe currently being manipulated.
 --- @return data.RecipePrototype recipe A deep copy of the recipe currently being manipulated.
 --- @nodiscard
 function khaoslib_recipe:get()
@@ -107,13 +136,14 @@ function khaoslib_recipe:set(fields)
   return self
 end
 
---- Creates a deep copy of the recipe currently being manipulated.
+--- Creates a deep copy of the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param new_name data.RecipeID The name of the new recipe. Must not already exist.
 --- @return khaoslib.RecipeManipulator recipe A new recipe manipulation object with a deep copy of the recipe.
 --- @throws If a recipe with the new name already exists.
 --- @nodiscard
-function khaoslib_recipe:copy(new_name)
-  local copy = self:get()
+function khaoslib_recipe.copy(recipe, new_name)
+  local copy = util.table.deepcopy(resolve(recipe))
   copy.name = new_name
 
   return khaoslib_recipe:load(copy)
@@ -179,11 +209,12 @@ end
 -- #region Recipe manipulation methods
 -- Specialized methods for manipulating recipe ingredients, results, and properties.
 
---- Returns a deepcopy of all ingredients for the recipe currently being manipulated.
+--- Returns a deepcopy of all ingredients for the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @return data.IngredientPrototype[] ingredients A list of ingredients required by the recipe.
 --- @nodiscard
-function khaoslib_recipe:get_ingredients()
-  return util.table.deepcopy(self.recipe.ingredients or {})
+function khaoslib_recipe.get_ingredients(recipe)
+  return util.table.deepcopy(resolve(recipe).ingredients or {})
 end
 
 --- Sets the list of ingredients for the recipe currently being manipulated, replacing any existing ingredients.
@@ -198,11 +229,12 @@ function khaoslib_recipe:set_ingredients(ingredients)
   return self
 end
 
---- Returns the number of ingredients for the recipe currently being manipulated.
+--- Returns the number of ingredients for the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @return integer count The number of ingredients.
 --- @nodiscard
-function khaoslib_recipe:count_ingredients()
-  return #(self.recipe.ingredients or {})
+function khaoslib_recipe.count_ingredients(recipe)
+  return #(resolve(recipe).ingredients or {})
 end
 
 --- Checks if the recipe has an ingredient matching the given criteria.
@@ -222,11 +254,12 @@ end
 --- end
 --- ```
 ---
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param compare (fun(ingredient: data.IngredientPrototype): boolean)|data.ItemID|data.FluidID A comparison function or ingredient name to match.
 --- @return boolean has_ingredient True if the recipe has the ingredient, false otherwise.
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_recipe:has_ingredient(compare)
+function khaoslib_recipe.has_ingredient(recipe, compare)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -234,7 +267,7 @@ function khaoslib_recipe:has_ingredient(compare)
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  return khaoslib_list.has(self.recipe.ingredients, compare_fn)
+  return khaoslib_list.has(resolve(recipe).ingredients, compare_fn)
 end
 
 --- Adds an ingredient to the recipe if it doesn't already exist (prevents duplicates).
@@ -342,10 +375,11 @@ function khaoslib_recipe:clear_ingredients()
 end
 
 --- Returns a deep copy of all results produced by the recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @return data.ProductPrototype[] results A list of results produced by the recipe.
 --- @nodiscard
-function khaoslib_recipe:get_results()
-  return util.table.deepcopy(self.recipe.results or {})
+function khaoslib_recipe.get_results(recipe)
+  return util.table.deepcopy(resolve(recipe).results or {})
 end
 
 --- Gets all results that match the given criteria.
@@ -361,11 +395,12 @@ end
 --- end)
 --- ```
 ---
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param compare (fun(result: data.ProductPrototype): boolean)|data.ItemID|data.FluidID A comparison function or result name to match.
 --- @return data.ProductPrototype[] matching_results A deep copied list of all matching results.
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_recipe:get_matching_results(compare)
+function khaoslib_recipe.get_matching_results(recipe, compare)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -374,7 +409,7 @@ function khaoslib_recipe:get_matching_results(compare)
   end
 
   local matching_results = {}
-  for _, result in ipairs(self.recipe.results) do
+  for _, result in ipairs(resolve(recipe).results) do
     if compare_fn(result) then
       table.insert(matching_results, util.table.deepcopy(result))
     end
@@ -395,11 +430,12 @@ function khaoslib_recipe:set_results(results)
   return self
 end
 
---- Returns the number of different result types produced by the recipe currently being manipulated.
+--- Returns the number of different result types produced by the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @return integer count The number of result types.
 --- @nodiscard
-function khaoslib_recipe:count_results()
-  return #(self.recipe.results or {})
+function khaoslib_recipe.count_results(recipe)
+  return #(resolve(recipe).results or {})
 end
 
 --- Checks if the recipe produces a result matching the given criteria.
@@ -419,11 +455,12 @@ end
 --- end
 --- ```
 ---
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param compare (fun(result: data.ProductPrototype): boolean)|data.ItemID|data.FluidID A comparison function or result name to match.
 --- @return boolean has_result True if the recipe produces the result, false otherwise.
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_recipe:has_result(compare)
+function khaoslib_recipe.has_result(recipe, compare)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -431,7 +468,7 @@ function khaoslib_recipe:has_result(compare)
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  return khaoslib_list.has(self.recipe.results, compare_fn)
+  return khaoslib_list.has(resolve(recipe).results, compare_fn)
 end
 
 --- Counts how many results match the given criteria.
@@ -449,11 +486,12 @@ end
 --- end)
 --- ```
 ---
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param compare (fun(result: data.ProductPrototype): boolean)|data.ItemID|data.FluidID A comparison function or result name to match.
 --- @return integer count The number of matching results.
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_recipe:count_matching_results(compare)
+function khaoslib_recipe.count_matching_results(recipe, compare)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -462,7 +500,7 @@ function khaoslib_recipe:count_matching_results(compare)
   end
 
   local count = 0
-  for _, result in ipairs(self.recipe.results) do
+  for _, result in ipairs(resolve(recipe).results) do
     if compare_fn(result) then
       count = count + 1
     end

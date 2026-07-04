@@ -130,6 +130,20 @@ function khaoslib_technology:set(fields)
   return self
 end
 
+--- Unsets the given field in the technology currently being manipulated.
+--- @param field string The field to unset in the technology. See `data.TechnologyPrototype` for valid fields.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If field is not a string, or if it is the type or name field.
+function khaoslib_technology:unset(field)
+  if type(field) ~= "string" then error("field parameter: Expected string, got " .. type(field), 2) end
+  if field == "type" then error("Cannot unset the type of a technology.", 2) end
+  if field == "name" then error("Cannot unset the name of a technology.", 2) end
+
+  self.technology[field] = nil
+
+  return self
+end
+
 --- Creates a deep copy of the technology.
 --- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
 --- @param new_name data.TechnologyID The name of the new technology. Must not already exist.

@@ -3,6 +3,8 @@ Version: 1.2.1
 Date: 2026-07-04
   Bugfixes:
     - Ensure write functions work on non-existent lists.
+  Changes:
+    - Add unset function to nil out values via the recipe/technology modules.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 2026-07-03

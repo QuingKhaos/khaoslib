@@ -136,6 +136,20 @@ function khaoslib_recipe:set(fields)
   return self
 end
 
+--- Unsets the given field in the recipe currently being manipulated.
+--- @param field string The field to unset in the recipe. See `data.RecipePrototype` for valid fields.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If field is not a string, or if it is the type or name field.
+function khaoslib_recipe:unset(field)
+  if type(field) ~= "string" then error("field parameter: Expected string, got " .. type(field), 2) end
+  if field == "type" then error("Cannot unset the type of a recipe.", 2) end
+  if field == "name" then error("Cannot unset the name of a recipe.", 2) end
+
+  self.recipe[field] = nil
+
+  return self
+end
+
 --- Creates a deep copy of the given recipe.
 --- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @param new_name data.RecipeID The name of the new recipe. Must not already exist.

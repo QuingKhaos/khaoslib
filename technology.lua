@@ -708,7 +708,7 @@ end
 --- end, {all = true})
 --- ```
 ---
---- @param compare fun(ingredients: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
+--- @param compare (fun(ingredients: data.ResearchIngredient): boolean)|data.ItemID A comparison function or science pack name to match.
 --- @param options ListRemoveOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, removes all matching science packs instead of just the first.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
@@ -753,7 +753,7 @@ end
 --- end, {type = "item", name = "universal-science-pack", amount = 2}, {all = true})
 --- ```
 ---
---- @param compare fun(ingredient: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
+--- @param compare (fun(ingredient: data.ResearchIngredient): boolean)|data.ItemID A comparison function or science pack name to match.
 --- @param replacement (fun(ingredient: data.ResearchIngredient): data.ResearchIngredient)|data.ResearchIngredient The new science pack to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching science packs instead of just the first.

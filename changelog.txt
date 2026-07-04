@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.2
+Date: 2026-07-04
+  Bugfixes:
+    - Fix wrong typehint in science pack replace/remove functions of the technology module
+---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 2026-07-04
   Bugfixes:

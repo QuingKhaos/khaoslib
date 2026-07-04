@@ -258,7 +258,7 @@ end
 function khaoslib_technology:add_prerequisite(prerequisite)
   if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
 
-  khaoslib_list.add(self.technology.prerequisites, prerequisite, prerequisite)
+  self.technology.prerequisites = khaoslib_list.add(self.technology.prerequisites, prerequisite, prerequisite)
 
   return self
 end
@@ -286,7 +286,7 @@ end
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If compare is not a string or function.
 function khaoslib_technology:remove_prerequisite(compare, options)
-  khaoslib_list.remove(self.technology.prerequisites, compare, options)
+  self.technology.prerequisites = khaoslib_list.remove(self.technology.prerequisites, compare, options)
 
   return self
 end
@@ -318,7 +318,7 @@ end
 function khaoslib_technology:replace_prerequisite(compare, replacement, options)
   if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
 
-  khaoslib_list.replace(self.technology.prerequisites, replacement, compare, options)
+  self.technology.prerequisites = khaoslib_list.replace(self.technology.prerequisites, replacement, compare, options)
 
   return self
 end
@@ -378,7 +378,7 @@ end
 function khaoslib_technology:add_effect(effect)
   if type(effect) ~= "table" then error("effect parameter: Expected table, got " .. type(effect), 2) end
 
-  khaoslib_list.add(self.technology.effects, effect, nil, {allow_duplicates = true})
+  self.technology.effects = khaoslib_list.add(self.technology.effects, effect, nil, {allow_duplicates = true})
 
   return self
 end
@@ -405,7 +405,7 @@ end
 function khaoslib_technology:remove_effect(compare_fn, options)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
-  khaoslib_list.remove(self.technology.effects, compare_fn, options)
+  self.technology.effects = khaoslib_list.remove(self.technology.effects, compare_fn, options)
 
   return self
 end
@@ -435,7 +435,7 @@ function khaoslib_technology:replace_effect(compare_fn, replacement, options)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
   if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
 
-  khaoslib_list.replace(self.technology.effects, replacement, compare_fn, options)
+  self.technology.effects = khaoslib_list.replace(self.technology.effects, replacement, compare_fn, options)
 
   return self
 end
@@ -670,7 +670,7 @@ function khaoslib_technology:add_science_pack(ingredient)
   if not ingredient[2] then error("ingredient parameter: Missing science pack amount at index 2", 2) end
   if not self.technology.unit then error("technology.unit is not defined", 2) end
 
-  khaoslib_list.add(self.technology.unit.ingredients, ingredient, function(existing)
+  self.technology.unit.ingredients = khaoslib_list.add(self.technology.unit.ingredients, ingredient, function(existing)
     return existing[1] == ingredient[1]
   end)
 
@@ -712,7 +712,7 @@ function khaoslib_technology:remove_science_pack(compare, options)
     compare_fn = function(existing) return existing[1] == compare end
   end
 
-  khaoslib_list.remove(self.technology.unit.ingredients, compare_fn, options)
+  self.technology.unit.ingredients = khaoslib_list.remove(self.technology.unit.ingredients, compare_fn, options)
 
   return self
 end
@@ -764,7 +764,7 @@ function khaoslib_technology:replace_science_pack(compare, replacement, options)
     compare_fn = function(existing) return existing[1] == compare end
   end
 
-  khaoslib_list.replace(self.technology.unit.ingredients, replacement, compare_fn, options)
+  self.technology.unit.ingredients = khaoslib_list.replace(self.technology.unit.ingredients, replacement, compare_fn, options)
 
   return self
 end

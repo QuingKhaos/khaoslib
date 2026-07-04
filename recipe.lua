@@ -284,7 +284,7 @@ function khaoslib_recipe:add_ingredient(ingredient)
     return existing.type == ingredient.type and existing.name == ingredient.name
   end
 
-  khaoslib_list.add(self.recipe.ingredients, ingredient, compare_fn)
+  self.recipe.ingredients = khaoslib_list.add(self.recipe.ingredients, ingredient, compare_fn)
 
   return self
 end
@@ -319,7 +319,7 @@ function khaoslib_recipe:remove_ingredient(compare, options)
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  khaoslib_list.remove(self.recipe.ingredients, compare_fn, options)
+  self.recipe.ingredients = khaoslib_list.remove(self.recipe.ingredients, compare_fn, options)
 
   return self
 end
@@ -363,7 +363,7 @@ function khaoslib_recipe:replace_ingredient(compare, replacement, options)
     compare_fn = function(existing) return existing.name == compare end
   end
 
-  khaoslib_list.replace(self.recipe.ingredients, replacement, compare_fn, options)
+  self.recipe.ingredients = khaoslib_list.replace(self.recipe.ingredients, replacement, compare_fn, options)
 
   return self
 end
@@ -521,7 +521,7 @@ function khaoslib_recipe:add_result(result)
   if not result.name or type(result.name) ~= "string" then error("result parameter: Must have a name field of type string", 2) end
   if not result.amount or type(result.amount) ~= "number" then error("result parameter: Must have an amount field of type number", 2) end
 
-  khaoslib_list.add(self.recipe.results, result, nil, {allow_duplicates = true})
+  self.recipe.results = khaoslib_list.add(self.recipe.results, result, nil, {allow_duplicates = true})
 
   return self
 end

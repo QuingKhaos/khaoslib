@@ -762,7 +762,7 @@ end
 function khaoslib_technology:replace_science_pack(compare, replacement, options)
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
-  if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
   if type(replacement) == "table" then
     if not replacement[1] then error("replacement parameter: Missing science pack name at index 1", 2) end
     if not replacement[2] then error("replacement parameter: Missing science pack amount at index 2", 2) end

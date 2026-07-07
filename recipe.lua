@@ -221,7 +221,182 @@ end
 -- #endregion
 
 -- #region Recipe manipulation methods
--- Specialized methods for manipulating recipe ingredients, results, and properties.
+-- Specialized methods for manipulating recipe icons, ingredients, results, and properties.
+
+--- If the recipe has a single icon, it is converted to the icons list format. If the recipe already has an icons list, no changes are made.
+--- @param recipe data.RecipePrototype The recipe reference to populate icons for.
+local populate_icons = function(recipe)
+  if recipe.icon and (not recipe.icons or #recipe.icons == 0) then
+    recipe.icons = {{icon = recipe.icon, icon_size = recipe.icon_size or nil}}
+    recipe.icon = nil
+    recipe.icon_size = nil
+  end
+end
+
+--- If just a single item exists in the icons list, and it has no special properties, depopulate the icons list and set the icon and icon_size fields instead.
+--- @param recipe data.RecipePrototype The recipe reference to depopulate icons from.
+local depopulate_icons = function(recipe)
+  if #recipe.icons == 1 then
+    local icon = recipe.icons[1]
+    if icon.tint == nil and icon.shift == nil and icon.scale == nil and icon.draw_background == nil and icon.floating == nil then
+      recipe.icon = icon.icon
+      recipe.icon_size = icon.icon_size or nil
+      recipe.icons = nil
+    end
+  end
+end
+
+--- Returns a deepcopy of all icons for the given recipe. If the recipe has a single icon, it is returned as a single-element list.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return data.IconData[] icons A list of icons for the recipe.
+--- @nodiscard
+function khaoslib_recipe.get_icons(recipe)
+  local resolved_recipe = resolve(recipe)
+  if resolved_recipe.icon then
+    return util.table.deepcopy({icon = resolved_recipe.icon, icon_size = resolved_recipe.icon_size or nil})
+  elseif resolved_recipe.icons then
+    return util.table.deepcopy(resolved_recipe.icons --[=[@as data.IconData[]]=])
+  else
+    return {}
+  end
+end
+
+--- Sets the list of icons for the recipe currently being manipulated, replacing any existing icons.
+--- @param icons data.IconData[] A list of icons to set.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If icons is not a table.
+function khaoslib_recipe:set_icons(icons)
+  if type(icons) ~= "table" then error("icons parameter: Expected table, got " .. type(icons), 2) end
+
+  self.recipe.icon = nil
+  self.recipe.icon_size = nil
+  self.recipe.icons = util.table.deepcopy(icons)
+  depopulate_icons(self.recipe)
+
+  return self
+end
+
+--- Returns the number of icons for the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return integer count The number of icons.
+--- @nodiscard
+function khaoslib_recipe.count_icons(recipe)
+  local resolved_recipe = resolve(recipe)
+  return resolved_recipe.icon ~= nil and 1 or #(resolved_recipe.icons or {})
+end
+
+--- Checks if the recipe has an icon matching the given criteria.
+--- Supports both string matching (by icon filename) and custom comparison functions.
+---
+--- ```lua
+--- -- By name (string)
+--- if recipe:has_icon("__mymod__/graphics/icons/water.png") then
+---   -- Recipe uses water icon
+--- end
+---
+--- -- By comparison function
+--- if recipe:has_icon(function(icon)
+---   return icon.icon_size == 64
+--- end) then
+---   -- Recipe uses 64x64 icons
+--- end
+--- ```
+---
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return boolean has_icon True if the recipe has the icon, false otherwise.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.has_icon(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  local resolved_recipe = resolve(recipe)
+  populate_icons(resolved_recipe)
+
+  local result = khaoslib_list.has(resolved_recipe.icons, compare_fn)
+  depopulate_icons(resolved_recipe)
+
+  return result
+end
+
+--- Adds an icon to the recipe, allows duplicates.
+--- @param icon data.IconData The icon data to add.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If icon is not a table or doesn't have required fields.
+function khaoslib_recipe:add_icon(icon)
+  if type(icon) ~= "table" then error("icon parameter: Expected table, got " .. type(icon), 2) end
+  if not icon.icon or type(icon.icon) ~= "string" then error("icon parameter: Must have an icon field of type string", 2) end
+
+  populate_icons(self.recipe)
+  self.recipe.icons = khaoslib_list.add(self.recipe.icons, icon, nil, {allow_duplicates = true})
+  depopulate_icons(self.recipe)
+
+  return self
+end
+
+--- Removes matching icons from the recipe.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @param options ListRemoveOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, removes all matching icons instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_recipe:remove_icon(compare, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  populate_icons(self.recipe)
+  self.recipe.icons = khaoslib_list.remove(self.recipe.icons, compare_fn, options)
+  depopulate_icons(self.recipe)
+
+  return self
+end
+
+--- Replaces matching icons with a new icon.
+--- If no matching icons are found, no changes are made.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @param replacement (fun(icon: data.IconData): data.IconData)|data.IconData The new icon data to replace with.
+--- @param options ListReplaceOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, replaces all matching icons instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare is not a string or function, or replacement is not a table or function.
+function khaoslib_recipe:replace_icon(compare, replacement, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.icon or type(replacement.icon) ~= "string" then error("replacement parameter: Must have an icon field of type string", 2) end
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  populate_icons(self.recipe)
+  self.recipe.icons = khaoslib_list.replace(self.recipe.icons, replacement, compare_fn, options)
+  depopulate_icons(self.recipe)
+
+  return self
+end
+
+--- Removes all icons from the recipe.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+function khaoslib_recipe:clear_icons()
+  self.recipe.icon = nil
+  self.recipe.icon_size = nil
+  self.recipe.icons = nil
+
+  return self
+end
 
 --- Returns a deepcopy of all ingredients for the given recipe.
 --- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.

@@ -308,6 +308,160 @@ function khaoslib_entity:clear_icons()
   return self
 end
 
+--- Returns the emissions per minute for the entity's energy source, if applicable.
+--- @return table<data.AirbornePollutantID, double> emissions_per_minute A deep copy of the emissions per minute table
+--- @throws If the entity does not have an energy_source field.
+--- @nodiscard
+function khaoslib_entity:get_emissions()
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  return util.table.deepcopy(entity.energy_source.emissions_per_minute  or {})
+end
+
+--- Sets the emissions per minute for the entity's energy source, if applicable.
+--- @param emissions table<data.AirbornePollutantID, double> A table of emissions per minute to set.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the entity does not have an energy_source field.
+function khaoslib_entity:set_emissions(emissions)
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  if type(emissions) ~= "table" then error("emissions parameter: Expected table, got " .. type(emissions), 2) end
+
+  entity.energy_source.emissions_per_minute = util.table.deepcopy(emissions)
+
+  return self
+end
+
+--- Returns the number of emissions entries for the entity's energy source, if applicable.
+--- @return integer count The number of emissions entries.
+--- @throws If the entity does not have an energy_source field.
+function khaoslib_entity:count_emissions()
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  return #(entity.energy_source.emissions_per_minute or {})
+end
+
+--- Checks if the entity has an emissions entry matching the given criteria.
+--- Supports both string matching (by pollutant name) and custom comparison functions.
+--- @param compare (fun(emissions_per_minute: double): boolean)|data.AirbornePollutantID A comparison function or pollutant name to match.
+--- @return boolean has_emission True if the entity has the emissions entry, false otherwise.
+--- @throws If compare is not a string or function.
+function khaoslib_entity:has_emission(compare)
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  if type(compare) == "string" then
+    return entity.energy_source.emissions_per_minute and entity.energy_source.emissions_per_minute[compare] ~= nil or false
+  else
+    return khaoslib_list.has(entity.energy_source.emissions_per_minute or {}, compare)
+  end
+end
+
+--- Adds an emissions entry to the entity's energy source, if applicable.
+--- If the pollutant already exists, it will not be overwritten.
+--- @param pollutant data.AirbornePollutantID The name of the pollutant to add.
+--- @param amount double The amount of emissions per minute for the pollutant.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the entity does not have an energy_source field, or if pollutant is not a string, or if amount is not a number.
+function khaoslib_entity:add_emission(pollutant, amount)
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  if type(pollutant) ~= "string" then error("pollutant parameter: Expected string, got " .. type(pollutant), 2) end
+  if type(amount) ~= "number" then error("amount parameter: Expected number, got " .. type(amount), 2) end
+
+  entity.energy_source.emissions_per_minute = entity.energy_source.emissions_per_minute or {}
+  if entity.energy_source.emissions_per_minute[pollutant] == nil then
+    entity.energy_source.emissions_per_minute[pollutant] = amount
+  end
+
+  return self
+end
+
+--- Removes an emissions entry from the entity's energy source, if applicable.
+--- @param pollutant data.AirbornePollutantID The name of the pollutant to remove.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the entity does not have an energy_source field, or if pollutant is not a string.
+function khaoslib_entity:remove_emission(pollutant)
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  if type(pollutant) ~= "string" then error("pollutant parameter: Expected string, got " .. type(pollutant), 2) end
+
+  if entity.energy_source.emissions_per_minute then
+    entity.energy_source.emissions_per_minute[pollutant] = nil
+  end
+
+  return self
+end
+
+--- Replaces an emissions entry in the entity's energy source, if applicable. If the pollutant does not exist, it will be added.
+--- @param pollutant data.AirbornePollutantID The name of the pollutant to replace.
+--- @param amount double The new amount of emissions per minute for the pollutant.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the entity does not have an energy_source field, or if pollutant is not a string, or if amount is not a number.
+function khaoslib_entity:replace_emission(pollutant, amount)
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  if type(pollutant) ~= "string" then error("pollutant parameter: Expected string, got " .. type(pollutant), 2) end
+  if type(amount) ~= "number" then error("amount parameter: Expected number, got " .. type(amount), 2) end
+
+  entity.energy_source.emissions_per_minute = entity.energy_source.emissions_per_minute or {}
+  entity.energy_source.emissions_per_minute[pollutant] = amount
+
+  return self
+end
+
+--- Clears all emissions entries from the entity's energy source, if applicable.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the entity does not have an energy_source field.
+function khaoslib_entity:clear_emissions()
+  local entity = self.entity
+  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not entity.energy_source then
+    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  end
+
+  entity.energy_source.emissions_per_minute = {}
+
+  return self
+end
+
 --#endregion
 
 --#region Utility functions

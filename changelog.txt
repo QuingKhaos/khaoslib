@@ -5,6 +5,7 @@ Date: 2026-07-08
     - Ensure icons take priority in count_icons().
   Features:
     - Add entity module with icon handling.
+    - Add emissions handling to entity module.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.1
 Date: 2026-07-08

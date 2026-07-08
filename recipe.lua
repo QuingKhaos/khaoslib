@@ -282,7 +282,7 @@ end
 --- @nodiscard
 function khaoslib_recipe.count_icons(recipe)
   local resolved_recipe = resolve(recipe)
-  return resolved_recipe.icon ~= nil and 1 or #(resolved_recipe.icons or {})
+  return resolved_recipe.icons ~= nil and #resolved_recipe.icons or (resolved_recipe.icon ~= nil and 1 or 0)
 end
 
 --- Checks if the recipe has an icon matching the given criteria.

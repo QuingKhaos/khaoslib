@@ -210,7 +210,7 @@ end
 --- @return integer count The number of icons.
 --- @nodiscard
 function khaoslib_entity:count_icons()
-  return self.entity.icon ~= nil and 1 or #(self.entity.icons or {})
+  return self.entity.icons ~= nil and #self.entity.icons or (self.entity.icon ~= nil and 1 or 0)
 end
 
 --- Checks if the entity has an icon matching the given criteria.

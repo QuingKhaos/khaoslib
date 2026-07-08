@@ -270,7 +270,7 @@ end
 --- @nodiscard
 function khaoslib_technology.count_icons(technology)
   local resolved_technology = resolve(technology)
-  return resolved_technology.icon ~= nil and 1 or #(resolved_technology.icons or {})
+  return resolved_technology.icons ~= nil and #resolved_technology.icons or (resolved_technology.icon ~= nil and 1 or 0)
 end
 
 --- Checks if the technology has an icon matching the given criteria.

@@ -708,7 +708,6 @@ function khaoslib_recipe:add_result(result)
   if type(result) ~= "table" then error("result parameter: Expected table, got " .. type(result), 2) end
   if not result.type or type(result.type) ~= "string" then error("result parameter: Must have a type field of type string", 2) end
   if not result.name or type(result.name) ~= "string" then error("result parameter: Must have a name field of type string", 2) end
-  if not result.amount or type(result.amount) ~= "number" then error("result parameter: Must have an amount field of type number", 2) end
 
   self.recipe.results = khaoslib_list.add(self.recipe.results, result, nil, {allow_duplicates = true})
 

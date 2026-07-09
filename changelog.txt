@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.0
+Date: 2026-07-09
+  Features:
+    - Add get() function to list module.
+    - Add get_ingredient() to recipe module.
+    - Add get_result() to recipe module.
+---------------------------------------------------------------------------------------------------
 Version: 1.5.0
 Date: 2026-07-08
   Bugfixes:

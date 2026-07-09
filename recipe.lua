@@ -459,6 +459,26 @@ function khaoslib_recipe.has_ingredient(recipe, compare)
   return khaoslib_list.has(resolve(recipe).ingredients, compare_fn)
 end
 
+--- Gets the first ingredient that matches the given criteria.
+--- Supports both string matching (by ingredient name) and custom comparison functions.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(ingredient: data.IngredientPrototype): boolean)|data.ItemID|data.FluidID A comparison function or ingredient name to match.
+--- @return data.IngredientPrototype? ingredient The first matching ingredient, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.get_ingredient(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local ingredients = resolve(recipe).ingredients or {}
+  local result = khaoslib_list.get(ingredients, compare_fn)
+  return result and util.table.deepcopy(result) or nil
+end
+
 --- Adds an ingredient to the recipe if it doesn't already exist (prevents duplicates).
 --- @param ingredient data.IngredientPrototype The ingredient prototype to add.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
@@ -660,6 +680,26 @@ function khaoslib_recipe.has_result(recipe, compare)
   end
 
   return khaoslib_list.has(resolve(recipe).results, compare_fn)
+end
+
+--- Gets the first result that matches the given criteria.
+--- Supports both string matching (by result name) and custom comparison functions.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(result: data.ProductPrototype): boolean)|data.ItemID|data.FluidID A comparison function or result name to match.
+--- @return data.ProductPrototype? result The first matching result, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.get_result(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local results = resolve(recipe).results or {}
+  local result = khaoslib_list.get(results, compare_fn)
+  return result and util.table.deepcopy(result) or nil
 end
 
 --- Counts how many results match the given criteria.

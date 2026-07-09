@@ -103,7 +103,7 @@ end
 --- local has_item = khaoslib_list.has({{name="iron"}, {name="copper"}}, function(item) return item.name == "iron" end) -- true
 --- ```
 ---
---- @param list table The list to search in (can be nil, returns false)
+--- @param list table? The list to search in (can be nil, returns false)
 --- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @return boolean has_item True if the list contains a matching item, false otherwise´
 --- @nodiscard
@@ -118,6 +118,26 @@ function khaoslib_list.has(list, compare)
   end
 
   return false
+end
+
+--- Retrieves the first item from a list that matches a comparison function or string.
+---
+--- @generic T : any
+--- @param list T[]? The list to search in (can be nil, returns nil)
+--- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @return T? item The first matching item, or nil if no match is found
+--- @nodiscard
+function khaoslib_list.get(list, compare)
+  local validated_list, compare_fn = validate_and_prepare(list, compare, nil)
+  if not compare_fn then return nil end
+
+  for _, item in ipairs(validated_list) do
+    if compare_fn(item) then
+      return item
+    end
+  end
+
+  return nil
 end
 
 --- @class ListAddOptions
@@ -192,7 +212,7 @@ end
 --- khaoslib_list.remove(recipes, function(r) return r.name == "iron-plate" end) -- Removes iron-plate recipe
 --- ```
 ---
---- @param list table|nil The list to remove from (returns empty table if nil)
+--- @param list table? The list to remove from (returns empty table if nil)
 --- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListRemoveOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, removes all matching items instead of just the first
@@ -235,7 +255,7 @@ end
 --- ```
 ---
 --- @generic T : any
---- @param list table|nil The list to modify (returns empty table if nil)
+--- @param list table? The list to modify (returns empty table if nil)
 --- @param new_item (fun(old_item: T): T)|T The new item to replace with (will be deep copied)
 --- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListReplaceOptions? Options table with the following fields:

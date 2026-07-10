@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.0
-Date: ????
+Date: 2026-07-11
   Changes:
     - Add missing get_* functions to all modules to retrieve the first item matching a comparison function or string.
     - Use generic annotations for list module functions to improve type safety and clarity.

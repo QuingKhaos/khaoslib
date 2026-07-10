@@ -222,11 +222,187 @@ end
 -- #endregion
 
 -- #region Recipe manipulation methods
--- Specialized methods for manipulating recipe icons, ingredients, results, and properties.
+-- Specialized methods for manipulating recipe categories, icons, ingredients, results, and properties.
+
+--- Merges the recipe's category and additional_categories into a single list of categories.
+--- @param recipe data.RecipePrototype The recipe to merge categories for.
+--- @return data.RecipeCategoryID[] categories A list of all categories the recipe belongs to.
+--- @nodiscard
+local function merge_categories(recipe)
+  --- @type data.RecipeCategoryID[]
+  local categories = util.table.deepcopy(recipe.additional_categories or {})
+
+  if recipe.category then
+    table.insert(categories, 1, recipe.category)
+  end
+
+  return categories
+end
+
+--- Returns a list of all categories the recipe belongs to, including the main category and any additional categories.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return data.RecipeCategoryID[] categories A list of all categories the recipe belongs to.
+--- @nodiscard
+function khaoslib_recipe.get_categories(recipe)
+  return merge_categories(resolve(recipe))
+end
+
+--- Finds categories in the recipe that match the given criteria.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare string|fun(existing: data.RecipeCategoryID): boolean The comparison criteria.
+--- @return data.RecipeCategoryID[] matching_categories A list of matching categories.
+--- @nodiscard
+function khaoslib_recipe.find_categories(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  return khaoslib_list.find(merge_categories(resolve(recipe)), compare_fn)
+end
+
+--- Sets the recipe's category and additional_categories based on the given list of categories.
+--- If the list is empty, both fields are cleared. If the list has one category, it is set as the main category and additional_categories is cleared. If the list has multiple categories, the first is set as the main category and the rest are set as additional_categories.
+--- @param categories data.RecipeCategoryID[] The list of categories to set.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If categories is not a table.
+function khaoslib_recipe:set_categories(categories)
+  if type(categories) ~= "table" then error("categories parameter: Expected table, got " .. type(categories), 2) end
+
+  if #categories == 0 then
+    self.recipe.category = nil
+    self.recipe.additional_categories = nil
+  else
+    self.recipe.category = categories[1]
+    if #categories > 1 then
+      self.recipe.additional_categories = util.table.deepcopy({table.unpack(categories, 2)})
+    else
+      self.recipe.additional_categories = nil
+    end
+  end
+
+  return self
+end
+
+--- Returns the number of categories the recipe belongs to, including the main category and any additional categories.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return integer count The number of categories.
+--- @nodiscard
+function khaoslib_recipe.count_categories(recipe)
+  return #merge_categories(resolve(recipe))
+end
+
+--- Checks if the recipe has a category matching the given criteria.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(category: data.RecipeCategoryID): boolean)|string A comparison function or category ID to match.
+--- @return boolean has_category True if the recipe has a matching category, false otherwise.
+--- @nodiscard
+function khaoslib_recipe:has_category(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  return khaoslib_list.has(merge_categories(resolve(recipe)), compare_fn)
+end
+
+--- Gets the first category that matches the given criteria.
+--- Supports both string matching (by category ID) and custom comparison functions.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(category: data.RecipeCategoryID): boolean)|string A comparison function or category ID to match.
+--- @return data.RecipeCategoryID? category The first matching category, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.get_category(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  return khaoslib_list.get(merge_categories(resolve(recipe)), compare_fn)
+end
+
+--- Adds a category to the recipe.
+--- @param category data.RecipeCategoryID The category to add.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If category is not a string.
+function khaoslib_recipe:add_category(category)
+  if type(category) ~= "string" then error("category parameter: Expected string, got " .. type(category), 2) end
+
+  local categories = merge_categories(self.recipe)
+  local compare_fn = function(existing)
+    return existing == category
+  end
+
+  categories = khaoslib_list.add(categories, category, compare_fn)
+  self:set_categories(categories)
+
+  return self
+end
+
+--- Removes a category from the recipe.
+--- @param compare (fun(category: data.RecipeCategoryID): boolean)|string A comparison function or category ID to match.
+--- @param options ListRemoveOptions? Options table with fields:
+---  - `all` (boolean, default: false): if true, removes all matching categories instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_recipe:remove_category(compare, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  local categories = merge_categories(self.recipe)
+  categories = khaoslib_list.remove(categories, compare_fn, options)
+  self:set_categories(categories)
+
+  return self
+end
+
+--- Replaces a category in the recipe with a new category.
+--- Supports both string matching (by category ID) and custom comparison functions.
+--- @param compare (fun(category: data.RecipeCategoryID): boolean)|string A comparison function or category ID to match.
+--- @param replacement (fun(category: data.RecipeCategoryID): data.RecipeCategoryID)|string The new category ID or a function that returns the new category ID.
+--- @param options ListReplaceOptions? Options table with fields:
+---  - `all` (boolean, default: false): if true, replaces all matching categories instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare or replacement is not a string or function.
+function khaoslib_recipe:replace_category(compare, replacement, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+  if type(replacement) ~= "string" and type(replacement) ~= "function" then error("replacement parameter: Expected string or function, got " .. type(replacement), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  local categories = merge_categories(self.recipe)
+  categories = khaoslib_list.replace(categories, replacement, compare_fn, options)
+  self:set_categories(categories)
+
+  return self
+end
+
+--- Clears the recipe's category and additional_categories fields, effectively removing all categories from the recipe.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+function khaoslib_recipe:clear_categories()
+  self.recipe.category = nil
+  self.recipe.additional_categories = nil
+
+  return self
+end
 
 --- If the recipe has a single icon, it is converted to the icons list format. If the recipe already has an icons list, no changes are made.
 --- @param recipe data.RecipePrototype The recipe reference to populate icons for.
-local populate_icons = function(recipe)
+local function populate_icons(recipe)
   if recipe.icon and (not recipe.icons or #recipe.icons == 0) then
     recipe.icons = {{icon = recipe.icon, icon_size = recipe.icon_size or nil}}
     recipe.icon = nil
@@ -236,7 +412,7 @@ end
 
 --- If just a single item exists in the icons list, and it has no special properties, depopulate the icons list and set the icon and icon_size fields instead.
 --- @param recipe data.RecipePrototype The recipe reference to depopulate icons from.
-local depopulate_icons = function(recipe)
+local function depopulate_icons(recipe)
   if #recipe.icons == 1 then
     local icon = recipe.icons[1]
     if icon.tint == nil and icon.shift == nil and icon.scale == nil and icon.draw_background == nil and icon.floating == nil then

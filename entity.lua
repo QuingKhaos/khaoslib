@@ -56,8 +56,12 @@ function khaoslib_entity:get()
   return util.table.deepcopy(self.entity)
 end
 
+--- @class khaoslib.SetEntityFields : data.EntityPrototype
+--- @field type? string
+--- @field name? string
+
 --- Merges the given fields into the entity.
---- @param fields table A table of fields to merge into the entity. See `data.EntityPrototype` for valid fields.
+--- @param fields khaoslib.SetEntityFields A table of fields to merge into the entity. See `data.EntityPrototype` for valid fields.
 --- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
 function khaoslib_entity:set(fields)
@@ -65,7 +69,7 @@ function khaoslib_entity:set(fields)
   if fields.type then error("Cannot change the type of an entity.", 2) end
   if fields.name then error("Cannot change the name of an entity using set(). Use copy() to create a new entity with a different name.", 2) end
 
-  self.entity = util.merge({self.entity, fields})
+  self.entity = util.merge({self.entity, util.table.deepcopy(fields)})
 
   return self
 end
@@ -132,7 +136,7 @@ function khaoslib_entity:__add(other)
   other_copy.type = nil
   other_copy.name = nil
 
-  return self:set(other_copy)
+  return self:set(other_copy --[[@as khaoslib.SetEntityFields]])
 end
 
 --- Compares two entity manipulation objects for equality based on the entity name.

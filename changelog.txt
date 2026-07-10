@@ -10,6 +10,7 @@ Date: ????
     - Add category handling to recipe module.
     - Add options parameter to add_*() functions to allow specifying an index for insertion.
     - Add crafting machine tint handling to recipe module.
+    - Improve type hints for set() functions in all modules.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.1
 Date: 2026-07-10

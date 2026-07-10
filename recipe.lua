@@ -123,8 +123,12 @@ function khaoslib_recipe.get(recipe)
   return util.table.deepcopy(resolve(recipe)) --[[@as data.RecipePrototype]]
 end
 
+--- @class khaoslib.SetRecipeFields : data.RecipePrototype
+--- @field type? string
+--- @field name? string
+
 --- Merges the given fields into the recipe currently being manipulated.
---- @param fields table A table of fields to merge into the recipe. See `data.RecipePrototype` for valid fields.
+--- @param fields khaoslib.SetRecipeFields A table of fields to merge into the recipe. See `data.RecipePrototype` for valid fields.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
 function khaoslib_recipe:set(fields)
@@ -132,7 +136,7 @@ function khaoslib_recipe:set(fields)
   if fields.type then error("Cannot change the type of a recipe.", 2) end
   if fields.name then error("Cannot change the name of a recipe using set(). Use copy() to create a new recipe with a different name.", 2) end
 
-  self.recipe = util.merge({self.recipe, fields})
+  self.recipe = util.merge({self.recipe, util.table.deepcopy(fields)})
 
   return self
 end
@@ -200,7 +204,7 @@ function khaoslib_recipe:__add(other)
   other_copy.type = nil
   other_copy.name = nil
 
-  return self:set(other_copy)
+  return self:set(other_copy --[[@as khaoslib.SetRecipeFields]])
 end
 
 --- Compares two recipe manipulation objects for equality based on the recipe name.

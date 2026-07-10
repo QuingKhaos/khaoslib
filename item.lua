@@ -85,8 +85,12 @@ function khaoslib_item.get(item)
   return util.table.deepcopy(resolve(item)) --[[@as data.ItemPrototype]]
 end
 
+--- @class khaoslib.SetItemFields : data.ItemPrototype
+--- @field type? string
+--- @field name? string
+
 --- Merges the given fields into the item.
---- @param fields table A table of fields to merge into the item. See `data.ItemPrototype` for valid fields.
+--- @param fields khaoslib.SetItemFields A table of fields to merge into the item. See `data.ItemPrototype` for valid fields.
 --- @return khaoslib.ItemManipulator self The same item manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
 function khaoslib_item:set(fields)
@@ -94,7 +98,7 @@ function khaoslib_item:set(fields)
   if fields.type then error("Cannot change the type of an item.", 2) end
   if fields.name then error("Cannot change the name of an item using set(). Use copy() to create a new item with a different name.", 2) end
 
-  self.item = util.merge({self.item, fields})
+  self.item = util.merge({self.item, util.table.deepcopy(fields)})
 
   return self
 end
@@ -157,7 +161,7 @@ function khaoslib_item:__add(other)
   other_copy.type = nil
   other_copy.name = nil
 
-  return self:set(other_copy)
+  return self:set(other_copy --[[@as khaoslib.SetItemFields]])
 end
 
 --- Compares two item manipulation objects for equality based on the item name.

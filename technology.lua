@@ -117,8 +117,12 @@ function khaoslib_technology.get(technology)
   return util.table.deepcopy(resolve(technology)) --[[@as data.TechnologyPrototype]]
 end
 
+--- @class khaoslib.SetTechnologyFields : data.TechnologyPrototype
+--- @field type? string
+--- @field name? string
+
 --- Merges the given fields into the technology.
---- @param fields table A table of fields to merge into the technology. See `data.TechnologyPrototype` for valid fields.
+--- @param fields khaoslib.SetTechnologyFields A table of fields to merge into the technology. See `data.TechnologyPrototype` for valid fields.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
 function khaoslib_technology:set(fields)
@@ -126,7 +130,7 @@ function khaoslib_technology:set(fields)
   if fields.type then error("Cannot change the type of a technology.", 2) end
   if fields.name then error("Cannot change the name of a technology using set(). Use copy() to create a new technology with a different name.", 2) end
 
-  self.technology = util.merge({self.technology, fields})
+  self.technology = util.merge({self.technology, util.table.deepcopy(fields)})
 
   return self
 end
@@ -189,7 +193,7 @@ function khaoslib_technology:__add(other)
   other_copy.type = nil
   other_copy.name = nil
 
-  return self:set(other_copy)
+  return self:set(other_copy --[[@as khaoslib.SetTechnologyFields]])
 end
 
 --- Compares two technology manipulation objects for equality based on the technology name.

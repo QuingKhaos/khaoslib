@@ -182,10 +182,10 @@ end
 --- @return data.IconData[] icons A list of icons for the entity.
 --- @nodiscard
 function khaoslib_entity:get_icons()
-  if self.entity.icon then
-    return util.table.deepcopy({{icon = self.entity.icon, icon_size = self.entity.icon_size or nil}})
-  elseif self.entity.icons then
+  if self.entity.icons then
     return util.table.deepcopy(self.entity.icons --[=[@as data.IconData[]]=])
+  elseif self.entity.icon then
+    return util.table.deepcopy({{icon = self.entity.icon, icon_size = self.entity.icon_size or nil}})
   else
     return {}
   end

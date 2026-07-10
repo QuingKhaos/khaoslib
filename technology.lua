@@ -240,10 +240,10 @@ end
 --- @nodiscard
 function khaoslib_technology.get_icons(technology)
   local resolved_technology = resolve(technology)
-  if resolved_technology.icon then
-    return util.table.deepcopy({{icon = resolved_technology.icon, icon_size = resolved_technology.icon_size or nil}})
-  elseif resolved_technology.icons then
+  if resolved_technology.icons then
     return util.table.deepcopy(resolved_technology.icons --[=[@as data.IconData[]]=])
+  elseif resolved_technology.icon then
+    return util.table.deepcopy({{icon = resolved_technology.icon, icon_size = resolved_technology.icon_size or nil}})
   else
     return {}
   end

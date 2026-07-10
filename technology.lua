@@ -110,10 +110,11 @@ end
 --- @diagnostic enable: invisible
 
 --- Gets the raw data table of the technology.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
 --- @return data.TechnologyPrototype technology A deep copy of the technology data.
 --- @nodiscard
-function khaoslib_technology:get()
-  return util.table.deepcopy(self.technology) --[[@as data.TechnologyPrototype]]
+function khaoslib_technology.get(technology)
+  return util.table.deepcopy(resolve(technology)) --[[@as data.TechnologyPrototype]]
 end
 
 --- Merges the given fields into the technology.
@@ -249,6 +250,29 @@ function khaoslib_technology.get_icons(technology)
   end
 end
 
+--- Returns a deep-copied list of all icons for the given technology that match the given criteria.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData[] icons A list of matching icons.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.find_icons(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  local resolved_technology = resolve(technology)
+  populate_icons(resolved_technology)
+
+  local result = khaoslib_list.find(resolved_technology.icons, compare_fn)
+  depopulate_icons(resolved_technology)
+
+  return result
+end
+
 --- Sets the list of icons for the technology currently being manipulated, replacing any existing icons.
 --- @param icons data.IconData[] A list of icons to set.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
@@ -292,6 +316,30 @@ function khaoslib_technology.has_icon(technology, compare)
   populate_icons(resolved_technology)
 
   local result = khaoslib_list.has(resolved_technology.icons, compare_fn)
+  depopulate_icons(resolved_technology)
+
+  return result
+end
+
+--- Gets the first icon (deep-copy) that matches the given criteria.
+--- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData? icon The first matching icon, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.get_icon(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  local resolved_technology = resolve(technology)
+  populate_icons(resolved_technology)
+
+  local result = khaoslib_list.get(resolved_technology.icons, compare_fn)
   depopulate_icons(resolved_technology)
 
   return result
@@ -379,6 +427,24 @@ function khaoslib_technology.get_prerequisites(technology)
   return util.table.deepcopy(resolve(technology).prerequisites or {})
 end
 
+--- Returns a deep-copied list of all prerequisite technologies that match the given criteria.
+--- Supports both string matching (by prerequisite name) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(prerequisite: data.TechnologyID): boolean)|data.TechnologyID A comparison function or prerequisite name to match.
+--- @return data.TechnologyID[] prerequisites A list of matching prerequisite technology names.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.find_prerequisites(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing == compare end
+  end
+
+  return khaoslib_list.find(resolve(technology).prerequisites or {}, compare_fn)
+end
+
 --- Sets the list of prerequisite technologies for the technology currently being manipulated, replacing any existing prerequisites.
 --- @param prerequisites data.TechnologyID[] A list of prerequisite technology names to set.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
@@ -423,6 +489,17 @@ end
 --- @nodiscard
 function khaoslib_technology.has_prerequisite(technology, compare)
   return khaoslib_list.has(resolve(technology).prerequisites, compare)
+end
+
+--- Returns the first prerequisite (deep-copy) that matches the given criteria.
+--- Supports both string matching (by prerequisite name) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(prerequisite: data.TechnologyID): boolean)|data.TechnologyID A comparison function or prerequisite name to match.
+--- @return data.TechnologyID? prerequisite The first matching prerequisite technology name, or nil if none found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.get_prerequisite(technology, compare)
+  return khaoslib_list.get(resolve(technology).prerequisites, compare)
 end
 
 --- Adds a prerequisite to the technology currently being manipulated if it doesn't already exist.
@@ -513,6 +590,18 @@ function khaoslib_technology.get_effects(technology)
   return util.table.deepcopy(resolve(technology).effects or {})
 end
 
+--- Returns a deep-copied list of all effects granted by the given technology that match the given comparison function.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it matches.
+--- @return data.Modifier[] effects A list of matching effects.
+--- @throws If compare is not a function.
+--- @nodiscard
+function khaoslib_technology.find_effects(technology, compare)
+  if type(compare) ~= "function" then error("compare parameter: Expected function, got " .. type(compare), 2) end
+
+  return khaoslib_list.find(resolve(technology).effects or {}, compare)
+end
+
 --- Sets the list of effects granted by the technology currently being manipulated, replacing any existing effects.
 --- @param effects data.Modifier[] A list of effects to set.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
@@ -543,6 +632,18 @@ function khaoslib_technology.has_effect(technology, compare_fn)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
   return khaoslib_list.has(resolve(technology).effects, compare_fn)
+end
+
+--- Returns the first effect (deep-copy) that matches the given comparison function.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare_fn fun(effect: data.Modifier): boolean A function that takes an effect and returns true if it matches.
+--- @return data.Modifier? effect The first matching effect, or nil if no match is found.
+--- @throws If compare_fn is not a function.
+--- @nodiscard
+function khaoslib_technology.get_effect(technology, compare_fn)
+  if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
+
+  return khaoslib_list.get(resolve(technology).effects, compare_fn)
 end
 
 --- Adds an effect to the technology currently being manipulated.
@@ -622,23 +723,54 @@ function khaoslib_technology:clear_effects()
   return self
 end
 
+--- @class khaoslib_technology.GetUnlockRecipesOptions
+--- @field return_names boolean? If true, returns a list of recipe names instead of recipe prototypes. Default: true for backward compatibility.
+
 --- Gets all recipes unlocked by the given technology.
 --- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
---- @return data.RecipeID[] recipe_names A list of recipe names unlocked by this technology.
+--- @param options khaoslib_technology.GetUnlockRecipesOptions? Options table with fields:
+---  - `return_names` (boolean, default: true): If true, returns a list of recipe names instead of recipe prototypes, for backward compatibility.
+--- @return data.UnlockRecipeModifier[]|data.RecipeID[] recipes A list of recipe modifiers or names unlocked by this technology.
 --- @nodiscard
-function khaoslib_technology.get_unlock_recipes(technology)
-  local result = {}
-  local tech = resolve(technology)
+function khaoslib_technology.get_unlock_recipes(technology, options)
+  local compare_fn = function(existing) return existing.type == "unlock-recipe" end
 
-  if tech.effects then
-    for _, effect in ipairs(tech.effects) do
-      if effect.type == "unlock-recipe" and effect.recipe then
-        table.insert(result, effect.recipe)
-      end
-    end
+  options = options or {}
+  options.return_names = options.return_names == nil and true or options.return_names
+  local effects = khaoslib_technology.find_effects(technology, compare_fn --[[@as fun(effect: data.Modifier): boolean]])
+
+  if not options.return_names then
+    return effects
   end
 
-  return util.table.deepcopy(result)
+  local result = {}
+  for _, effect in ipairs(effects) do
+    table.insert(result, effect.recipe)
+  end
+
+  return result
+end
+
+--- Returns a deep-copied list of all recipes unlocked by the given technology that match the given criteria.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(effect: data.Modifier): boolean)|data.RecipeID An effect comparison function or recipe name to match.
+--- @return data.RecipeID[] recipe_names A list of recipe names unlocked by this technology.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.find_unlock_recipes(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.type == "unlock-recipe" and existing.recipe == compare end
+  end
+
+  local result = {}
+  for _, effect in ipairs(khaoslib_technology.find_effects(technology, compare_fn --[[@as fun(effect: data.Modifier): boolean]])) do
+    table.insert(result, effect.recipe)
+  end
+
+  return result
 end
 
 --- Returns the number of unlock-recipe effects in the technology currently being manipulated.
@@ -646,18 +778,7 @@ end
 --- @return integer count The number of unlock-recipe effects.
 --- @nodiscard
 function khaoslib_technology.count_unlock_recipes(technology)
-  local count = 0
-  local tech = resolve(technology)
-
-  if tech.effects then
-    for _, effect in ipairs(tech.effects) do
-      if effect.type == "unlock-recipe" then
-        count = count + 1
-      end
-    end
-  end
-
-  return count
+  return #(khaoslib_technology.get_unlock_recipes(technology))
 end
 
 --- Returns `true` if the given technology has an "unlock-recipe" effect for the given recipe.
@@ -675,6 +796,24 @@ function khaoslib_technology.has_unlock_recipe(technology, compare)
   end
 
   return khaoslib_technology.has_effect(technology, compare_fn --[[@as fun(effect: data.Modifier): boolean]])
+end
+
+--- Returns the first recipe unlocked by the given technology that matches the given criteria.
+--- Supports both string matching (by recipe name) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(effect: data.Modifier): boolean)|data.RecipeID An effect comparison function or recipe name to match.
+--- @return data.UnlockRecipeModifier? recipe The first matching recipe modifier, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.get_unlock_recipe(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.type == "unlock-recipe" and existing.recipe == compare end
+  end
+
+  return khaoslib_technology.get_effect(technology, compare_fn --[[@as fun(effect: data.Modifier): boolean]]) --[[@as data.UnlockRecipeModifier?]]
 end
 
 --- Adds an "unlock-recipe" effect to the technology currently being manipulated.
@@ -769,6 +908,29 @@ function khaoslib_technology.get_science_packs(technology)
   return util.table.deepcopy(tech.unit.ingredients)
 end
 
+--- Returns a deep-copied list of all science pack ingredients for the given technology that match the given criteria.
+--- Supports both string matching (by science pack name) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare (fun(ingredient: data.ResearchIngredient): boolean)|data.ItemID A comparison function or science pack name to match.
+--- @return data.ResearchIngredient[] ingredients A list of matching science pack ingredients.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_technology.find_science_packs(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local tech = resolve(technology)
+  if not tech.unit or not tech.unit.ingredients then
+    return {}
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing[1] == compare end
+  end
+
+  return khaoslib_list.find(tech.unit.ingredients, compare_fn)
+end
+
 --- Sets the science pack list, replacing existing ones.
 --- @param ingredients data.ResearchIngredient[] A list of science pack ingredients to set.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
@@ -813,7 +975,7 @@ end
 --- ```
 ---
 --- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
---- @param compare fun(ingredients: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
+--- @param compare fun(ingredient: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
 --- @return boolean has_science_pack True if the technology has the science pack, false otherwise.
 --- @throws If compare is not a string or function, or unit is not defined on the technology.
 --- @nodiscard
@@ -832,6 +994,30 @@ function khaoslib_technology.has_science_pack(technology, compare)
   end
 
   return khaoslib_list.has(tech.unit.ingredients, compare_fn)
+end
+
+--- Returns the first science pack ingredient (deep-copy) that matches the given criteria.
+--- Supports both string matching (by science pack name) and custom comparison functions.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @param compare fun(ingredient: data.ResearchIngredient): boolean|data.ItemID A comparison function or science pack name to match.
+--- @return data.ResearchIngredient? ingredient The first matching science pack ingredient, or nil if no match is found.
+--- @throws If compare is not a string or function, or unit is not defined on the technology.
+--- @nodiscard
+function khaoslib_technology.get_science_pack(technology, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local tech = resolve(technology)
+  if not tech.unit then error("technology.unit is not defined", 2) end
+  if not tech.unit.ingredients then
+    return nil
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing[1] == compare end
+  end
+
+  return khaoslib_list.get(tech.unit.ingredients, compare_fn)
 end
 
 --- Adds a science pack ingredient to the technology currently being manipulated if it doesn't already exist. Ingredients cannot have duplicates.

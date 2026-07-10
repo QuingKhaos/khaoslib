@@ -78,10 +78,11 @@ end
 --- @diagnostic enable: invisible
 
 --- Gets the raw data table of the item.
+--- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @return data.ItemPrototype item A deep copy of the item data.
 --- @nodiscard
-function khaoslib_item:get()
-  return util.table.deepcopy(self.item) --[[@as data.ItemPrototype]]
+function khaoslib_item.get(item)
+  return util.table.deepcopy(resolve(item)) --[[@as data.ItemPrototype]]
 end
 
 --- Merges the given fields into the item.
@@ -217,6 +218,29 @@ function khaoslib_item.get_icons(item)
   end
 end
 
+--- Returns a deep-copied list of all icons for the given item that match the given criteria.
+--- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData[] icons A list of matching icons.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_item.find_icons(item, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  local resolved_item = resolve(item)
+  populate_icons(resolved_item)
+
+  local result = khaoslib_list.find(resolved_item.icons, compare_fn)
+  depopulate_icons(resolved_item)
+
+  return result
+end
+
 --- Sets the list of icons for the item currently being manipulated, replacing any existing icons.
 --- @param icons data.IconData[] A list of icons to set.
 --- @return khaoslib.ItemManipulator self The same item manipulation object for method chaining.
@@ -260,6 +284,30 @@ function khaoslib_item.has_icon(item, compare)
   populate_icons(resolved_item)
 
   local result = khaoslib_list.has(resolved_item.icons, compare_fn)
+  depopulate_icons(resolved_item)
+
+  return result
+end
+
+--- Gets the first icon (deep-copy) that matches the given criteria.
+--- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData? icon The first matching icon, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_item.get_icon(item, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  local resolved_item = resolve(item)
+  populate_icons(resolved_item)
+
+  local result = khaoslib_list.get(resolved_item.icons, compare_fn)
   depopulate_icons(resolved_item)
 
   return result

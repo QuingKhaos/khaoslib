@@ -191,6 +191,26 @@ function khaoslib_entity:get_icons()
   end
 end
 
+--- Returns a deep-copied list of all icons for the given entity that match the given criteria.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData[] icons A list of matching icons.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity:find_icons(compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  populate_icons(self.entity)
+  local result = khaoslib_list.find(self.entity.icons, compare_fn)
+  depopulate_icons(self.entity)
+
+  return result
+end
+
 --- Sets the list of icons for the entity currently being manipulated, replacing any existing icons.
 --- @param icons data.IconData[] A list of icons to set.
 --- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
@@ -229,6 +249,27 @@ function khaoslib_entity:has_icon(compare)
 
   populate_icons(self.entity)
   local result = khaoslib_list.has(self.entity.icons, compare_fn)
+  depopulate_icons(self.entity)
+
+  return result
+end
+
+--- Gets the first icon (deep-copy) that matches the given criteria.
+--- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @return data.IconData? icon The first matching icon, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity:get_icon(compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.icon == compare end
+  end
+
+  populate_icons(self.entity)
+  local result = khaoslib_list.get(self.entity.icons, compare_fn)
   depopulate_icons(self.entity)
 
   return result

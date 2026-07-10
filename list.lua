@@ -37,8 +37,9 @@ local khaoslib_list = {}
 
 --- Internal helper to normalize comparison logic for consistent behavior across all list operations.
 --- Converts string comparisons to functions, enabling uniform handling throughout the module.
---- @param compare function|string A comparison function or string to match
---- @return function compare_fn The comparison function to use
+--- @generic T : any
+--- @param compare (fun(item: T): boolean)|string A comparison function or string to match
+--- @return fun(item: T): boolean compare_fn The comparison function to use
 local function make_compare_fn(compare)
   if type(compare) == "string" then
     return function(item) return item == compare end
@@ -50,11 +51,12 @@ local function make_compare_fn(compare)
 end
 
 --- Internal helper to validate and prepare common parameters for list operations.
---- @param list table? The list parameter
---- @param compare function|string The comparison parameter
+--- @generic T : any
+--- @param list T[]? The list parameter
+--- @param compare (fun(item: T): boolean)|string The comparison parameter
 --- @param empty_return_value any The value to return if list is nil
---- @return table list The validated list (or empty table)
---- @return function? compare_fn The normalized comparison function (nil if list was nil)
+--- @return T[] list The validated list (or empty table)
+--- @return (fun(item: T): boolean)? compare_fn The normalized comparison function (nil if list was nil)
 --- @nodiscard
 local function validate_and_prepare(list, compare, empty_return_value)
   if not list then return empty_return_value or {}, nil end
@@ -65,9 +67,10 @@ local function validate_and_prepare(list, compare, empty_return_value)
 end
 
 --- Internal helper to perform list operations that can work on first match or all matches.
---- @param list table The validated list
---- @param compare_fn function The comparison function
---- @param operation_fn function Function that performs the operation on a single item (i, item) -> should_continue
+--- @generic T : any
+--- @param list T[] The validated list
+--- @param compare_fn fun(item: T): boolean The comparison function
+--- @param operation_fn fun(i: number, item: T) Function that performs the operation on a single item (i, item) -> should_continue
 --- @param all boolean Whether to process all matches or just the first
 local function perform_list_operation(list, compare_fn, operation_fn, all)
   if all then
@@ -103,8 +106,9 @@ end
 --- local has_item = khaoslib_list.has({{name="iron"}, {name="copper"}}, function(item) return item.name == "iron" end) -- true
 --- ```
 ---
---- @param list table? The list to search in (can be nil, returns false)
---- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @generic T : any
+--- @param list T[]? The list to search in (can be nil, returns false)
+--- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @return boolean has_item True if the list contains a matching item, false otherwise´
 --- @nodiscard
 function khaoslib_list.has(list, compare)
@@ -120,8 +124,7 @@ function khaoslib_list.has(list, compare)
   return false
 end
 
---- Retrieves the first item from a list that matches a comparison function or string.
----
+--- Retrieves the first item (deep-copy) from a list that matches a comparison function or string.
 --- @generic T : any
 --- @param list T[]? The list to search in (can be nil, returns nil)
 --- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
@@ -133,11 +136,32 @@ function khaoslib_list.get(list, compare)
 
   for _, item in ipairs(validated_list) do
     if compare_fn(item) then
-      return item
+      if type(item) == "table" then
+        return util.table.deepcopy(item)
+      else
+        return item
+      end
     end
   end
 
   return nil
+end
+
+--- Retrieve all items (deep-copy) from a list that match a comparison function or string.
+--- @generic T : any
+--- @param list T[]? The list to search in (can be nil, returns empty table)
+--- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @return T[] list The modified list (same reference as input, or empty table if input was nil)
+function khaoslib_list.find(list, compare)
+  local validated_list, compare_fn = validate_and_prepare(list, compare, {})
+  if not compare_fn then return validated_list end
+
+  local results = {}
+  perform_list_operation(validated_list, compare_fn, function(i, item) --luacheck: ignore 212
+    table.insert(results, util.table.deepcopy(item))
+  end, true)
+
+  return results
 end
 
 --- @class ListAddOptions
@@ -164,12 +188,13 @@ end
 --- khaoslib_list.add(recipes, {name = "copper-plate"}, function(r) return r.name == "copper-plate" end)
 --- ```
 ---
---- @param list table? The list to add to (will be created if nil)
---- @param item any The item to add (will be deep copied)
---- @param compare (function|string)? A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
+--- @generic T : any
+--- @param list T[]? The list to add to (will be created if nil)
+--- @param item T The item to add (will be deep copied)
+--- @param compare (fun(item: T): boolean)|string? A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
 --- @param options ListAddOptions? Options table with the following fields:
 ---   - `allow_duplicates` (boolean, default: false): If true, skips duplicate checking and adds the item directly
---- @return table list The modified list (same reference as input, or new table if input was nil)
+--- @return T[] list The modified list (same reference as input, or new table if input was nil)
 function khaoslib_list.add(list, item, compare, options)
   list = list or {}
   options = options or {}
@@ -212,11 +237,12 @@ end
 --- khaoslib_list.remove(recipes, function(r) return r.name == "iron-plate" end) -- Removes iron-plate recipe
 --- ```
 ---
---- @param list table? The list to remove from (returns empty table if nil)
---- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @generic T : any
+--- @param list T[]? The list to remove from (returns empty table if nil)
+--- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListRemoveOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, removes all matching items instead of just the first
---- @return table list The modified list (same reference as input, or empty table if input was nil)
+--- @return T[] list The modified list (same reference as input, or empty table if input was nil)
 function khaoslib_list.remove(list, compare, options)
   local validated_list, compare_fn = validate_and_prepare(list, compare, {})
   if not compare_fn then return validated_list end
@@ -255,12 +281,12 @@ end
 --- ```
 ---
 --- @generic T : any
---- @param list table? The list to modify (returns empty table if nil)
+--- @param list T[]? The list to modify (returns empty table if nil)
 --- @param new_item (fun(old_item: T): T)|T The new item to replace with (will be deep copied)
---- @param compare function|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListReplaceOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, replaces all matching items instead of just the first
---- @return table list The modified list (same reference as input, or empty table if input was nil)
+--- @return T[] list The modified list (same reference as input, or empty table if input was nil)
 function khaoslib_list.replace(list, new_item, compare, options)
   local validated_list, compare_fn = validate_and_prepare(list, compare, {})
   if not compare_fn then return validated_list end

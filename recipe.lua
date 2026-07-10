@@ -222,7 +222,7 @@ end
 -- #endregion
 
 -- #region Recipe manipulation methods
--- Specialized methods for manipulating recipe categories, icons, ingredients, results, and properties.
+-- Specialized methods for manipulating recipes.
 
 --- Merges the recipe's category and additional_categories into a single list of categories.
 --- @param recipe data.RecipePrototype The recipe to merge categories for.
@@ -398,6 +398,60 @@ end
 function khaoslib_recipe:clear_categories()
   self.recipe.category = nil
   self.recipe.additional_categories = nil
+
+  return self
+end
+
+--- Get the crafting machine tint for the given recipe, if it has one.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return data.RecipeTints? tint The crafting machine tint, or nil if the recipe does not have one.
+--- @nodiscard
+function khaoslib_recipe.get_crafting_machine_tint(recipe)
+  local resolved_recipe = resolve(recipe)
+  if resolved_recipe.crafting_machine_tint then
+    return util.table.deepcopy(resolved_recipe.crafting_machine_tint)
+  else
+    return nil
+  end
+end
+
+--- Sets the crafting machine tint for the recipe currently being manipulated.
+--- @param tint data.RecipeTints The crafting machine tint to set, or nil to remove it.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If tint is not a table.
+function khaoslib_recipe:set_crafting_machine_tint(tint)
+  if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
+
+  self.recipe.crafting_machine_tint = util.table.deepcopy(tint)
+
+  return self
+end
+
+--- Merges the given crafting machine tint into the recipe currently being manipulated, overwriting any existing tint.
+--- @param tint data.RecipeTints The crafting machine tint to merge.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If tint is not a table.
+function khaoslib_recipe:merge_crafting_machine_tint(tint)
+  if type(tint) ~= "table" then error("tint parameter: Expected table, got " .. type(tint), 2) end
+
+  local existing_tint = self.recipe.crafting_machine_tint or {}
+  self.recipe.crafting_machine_tint = util.merge({existing_tint, util.table.deepcopy(tint)})
+
+  return self
+end
+
+--- Checks if the recipe has a crafting machine tint defined.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return boolean has_tint True if the recipe has a crafting machine tint, false otherwise.
+--- @nodiscard
+function khaoslib_recipe.has_crafting_machine_tint(recipe)
+  return resolve(recipe).crafting_machine_tint ~= nil
+end
+
+--- Clears the crafting machine tint for the recipe currently being manipulated.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+function khaoslib_recipe:clear_crafting_machine_tint()
+  self.recipe.crafting_machine_tint = nil
 
   return self
 end

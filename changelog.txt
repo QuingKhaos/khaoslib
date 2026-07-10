@@ -9,6 +9,7 @@ Date: ????
     - Deprecate get/count_matching_*() functions in favor of find_*() functions for consistency across modules.
     - Add category handling to recipe module.
     - Add options parameter to add_*() functions to allow specifying an index for insertion.
+    - Add crafting machine tint handling to recipe module.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.1
 Date: 2026-07-10

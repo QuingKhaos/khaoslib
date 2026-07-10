@@ -347,14 +347,20 @@ end
 
 --- Adds an icon to the technology, allows duplicates.
 --- @param icon data.IconData The icon data to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the icon at the specified index instead of appending to the end of the list.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If icon is not a table or doesn't have required fields.
-function khaoslib_technology:add_icon(icon)
+function khaoslib_technology:add_icon(icon, options)
   if type(icon) ~= "table" then error("icon parameter: Expected table, got " .. type(icon), 2) end
   if not icon.icon or type(icon.icon) ~= "string" then error("icon parameter: Must have an icon field of type string", 2) end
 
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
   populate_icons(self.technology)
-  self.technology.icons = khaoslib_list.add(self.technology.icons, icon, nil, {allow_duplicates = true})
+  self.technology.icons = khaoslib_list.add(self.technology.icons, icon, nil, options)
   depopulate_icons(self.technology)
 
   return self
@@ -504,12 +510,14 @@ end
 
 --- Adds a prerequisite to the technology currently being manipulated if it doesn't already exist.
 --- @param prerequisite data.TechnologyID The name of the prerequisite technology to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the prerequisite at the specified index instead of appending to the end of the list.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining
 --- @throws If prerequisite is not a string.
-function khaoslib_technology:add_prerequisite(prerequisite)
+function khaoslib_technology:add_prerequisite(prerequisite, options)
   if type(prerequisite) ~= "string" then error("prerequisite parameter: Expected string, got " .. type(prerequisite), 2) end
 
-  self.technology.prerequisites = khaoslib_list.add(self.technology.prerequisites, prerequisite, prerequisite)
+  self.technology.prerequisites = khaoslib_list.add(self.technology.prerequisites, prerequisite, prerequisite, options --[[@as ListAddOptions?]])
 
   return self
 end
@@ -648,12 +656,18 @@ end
 
 --- Adds an effect to the technology currently being manipulated.
 --- @param effect data.Modifier The effect to add. See `data.Modifier` for valid effect types.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the effect at the specified index instead of appending to the end of the list.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If effect is not a table.
-function khaoslib_technology:add_effect(effect)
+function khaoslib_technology:add_effect(effect, options)
   if type(effect) ~= "table" then error("effect parameter: Expected table, got " .. type(effect), 2) end
 
-  self.technology.effects = khaoslib_list.add(self.technology.effects, effect, nil, {allow_duplicates = true})
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
+  self.technology.effects = khaoslib_list.add(self.technology.effects, effect, nil, options)
 
   return self
 end
@@ -819,9 +833,11 @@ end
 --- Adds an "unlock-recipe" effect to the technology currently being manipulated.
 --- @param recipe data.RecipeID The name of the recipe to unlock.
 --- @param modifier table? modifier Optional table with additional modifier options to add to the unlock effect. See `data.UnlockRecipeModifier` for valid fields.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the effect at the specified index instead of appending to the end of the list.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If recipe is not a string.
-function khaoslib_technology:add_unlock_recipe(recipe, modifier)
+function khaoslib_technology:add_unlock_recipe(recipe, modifier, options)
   if type(recipe) ~= "string" then error("recipe parameter: Expected string, got " .. type(recipe), 2) end
   if modifier ~= nil and type(modifier) ~= "table" then error("modifier parameter: Expected table or nil, got " .. type(modifier), 2) end
 
@@ -829,7 +845,7 @@ function khaoslib_technology:add_unlock_recipe(recipe, modifier)
   modifier.type = "unlock-recipe"
   modifier.recipe = recipe
 
-  return self:add_effect(modifier)
+  return self:add_effect(modifier, options)
 end
 
 --- Removes matching "unlock-recipe" effects from the technology.
@@ -1021,18 +1037,19 @@ function khaoslib_technology.get_science_pack(technology, compare)
 end
 
 --- Adds a science pack ingredient to the technology currently being manipulated if it doesn't already exist. Ingredients cannot have duplicates.
---- @param ingredient data.ResearchIngredient The science pack ingredientto add.
+--- @param ingredient data.ResearchIngredient The science pack ingredient to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the ingredient at the specified index instead of appending to the end of the list.
 --- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
 --- @throws If ingredient is not a table or isn't an ingredient, or unit is not defined on the technology.
-function khaoslib_technology:add_science_pack(ingredient)
+function khaoslib_technology:add_science_pack(ingredient, options)
   if type(ingredient) ~= "table" then error("ingredient parameter: Expected table, got " .. type(ingredient), 2) end
   if not ingredient[1] then error("ingredient parameter: Missing science pack name at index 1", 2) end
   if not ingredient[2] then error("ingredient parameter: Missing science pack amount at index 2", 2) end
   if not self.technology.unit then error("technology.unit is not defined", 2) end
 
-  self.technology.unit.ingredients = khaoslib_list.add(self.technology.unit.ingredients, ingredient, function(existing)
-    return existing[1] == ingredient[1]
-  end)
+  local compare_fn = function(existing) return existing[1] == ingredient[1] end
+  self.technology.unit.ingredients = khaoslib_list.add(self.technology.unit.ingredients, ingredient, compare_fn, options --[[@as ListAddOptions?]])
 
   return self
 end

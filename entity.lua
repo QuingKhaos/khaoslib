@@ -277,14 +277,20 @@ end
 
 --- Adds an icon to the entity, allows duplicates.
 --- @param icon data.IconData The icon data to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the icon at the specified index instead of appending to the end of the list.
 --- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
 --- @throws If icon is not a table or doesn't have required fields.
-function khaoslib_entity:add_icon(icon)
+function khaoslib_entity:add_icon(icon, options)
   if type(icon) ~= "table" then error("icon parameter: Expected table, got " .. type(icon), 2) end
   if not icon.icon or type(icon.icon) ~= "string" then error("icon parameter: Must have an icon field of type string", 2) end
 
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
   populate_icons(self.entity)
-  self.entity.icons = khaoslib_list.add(self.entity.icons, icon, nil, {allow_duplicates = true})
+  self.entity.icons = khaoslib_list.add(self.entity.icons, icon, nil, options)
   depopulate_icons(self.entity)
 
   return self

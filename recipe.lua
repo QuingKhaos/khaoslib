@@ -330,9 +330,11 @@ end
 
 --- Adds a category to the recipe.
 --- @param category data.RecipeCategoryID The category to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the category at the specified index instead of appending to the end of the list.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If category is not a string.
-function khaoslib_recipe:add_category(category)
+function khaoslib_recipe:add_category(category, options)
   if type(category) ~= "string" then error("category parameter: Expected string, got " .. type(category), 2) end
 
   local categories = merge_categories(self.recipe)
@@ -340,7 +342,7 @@ function khaoslib_recipe:add_category(category)
     return existing == category
   end
 
-  categories = khaoslib_list.add(categories, category, compare_fn)
+  categories = khaoslib_list.add(categories, category, compare_fn, options --[[@as ListAddOptions?]])
   self:set_categories(categories)
 
   return self
@@ -550,14 +552,20 @@ end
 
 --- Adds an icon to the recipe, allows duplicates.
 --- @param icon data.IconData The icon data to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the icon at the specified index instead of appending to the end of the list.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If icon is not a table or doesn't have required fields.
-function khaoslib_recipe:add_icon(icon)
+function khaoslib_recipe:add_icon(icon, options)
   if type(icon) ~= "table" then error("icon parameter: Expected table, got " .. type(icon), 2) end
   if not icon.icon or type(icon.icon) ~= "string" then error("icon parameter: Must have an icon field of type string", 2) end
 
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
   populate_icons(self.recipe)
-  self.recipe.icons = khaoslib_list.add(self.recipe.icons, icon, nil, {allow_duplicates = true})
+  self.recipe.icons = khaoslib_list.add(self.recipe.icons, icon, nil, options)
   depopulate_icons(self.recipe)
 
   return self
@@ -720,9 +728,11 @@ end
 
 --- Adds an ingredient to the recipe if it doesn't already exist (prevents duplicates).
 --- @param ingredient data.IngredientPrototype The ingredient prototype to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the ingredient at the specified index instead of appending to the end of the list.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If ingredient is not a table or doesn't have required fields.
-function khaoslib_recipe:add_ingredient(ingredient)
+function khaoslib_recipe:add_ingredient(ingredient, options)
   if type(ingredient) ~= "table" then error("ingredient parameter: Expected table, got " .. type(ingredient), 2) end
   if not ingredient.type or type(ingredient.type) ~= "string" then error("ingredient parameter: Must have a type field of type string", 2) end
   if not ingredient.name or type(ingredient.name) ~= "string" then error("ingredient parameter: Must have a name field of type string", 2) end
@@ -732,7 +742,7 @@ function khaoslib_recipe:add_ingredient(ingredient)
     return existing.type == ingredient.type and existing.name == ingredient.name
   end
 
-  self.recipe.ingredients = khaoslib_list.add(self.recipe.ingredients, ingredient, compare_fn)
+  self.recipe.ingredients = khaoslib_list.add(self.recipe.ingredients, ingredient, compare_fn, options --[[@as ListAddOptions?]])
 
   return self
 end
@@ -970,14 +980,20 @@ end
 
 --- Adds a result to the recipe. Unlike ingredients, results can have duplicates in Factorio recipes.
 --- @param result data.ProductPrototype The result prototype to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the result at the specified index instead of appending to the end of the list.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If result is not a table or doesn't have required fields.
-function khaoslib_recipe:add_result(result)
+function khaoslib_recipe:add_result(result, options)
   if type(result) ~= "table" then error("result parameter: Expected table, got " .. type(result), 2) end
   if not result.type or type(result.type) ~= "string" then error("result parameter: Must have a type field of type string", 2) end
   if not result.name or type(result.name) ~= "string" then error("result parameter: Must have a name field of type string", 2) end
 
-  self.recipe.results = khaoslib_list.add(self.recipe.results, result, nil, {allow_duplicates = true})
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
+  self.recipe.results = khaoslib_list.add(self.recipe.results, result, nil, options)
 
   return self
 end
@@ -1082,9 +1098,11 @@ end
 --- ```
 ---
 --- @param technology data.TechnologyID The name of the technology to add this recipe's unlock effect to.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the effect at the specified index instead of appending to the end of the list.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 --- @throws If technology is not a string or if the technology doesn't exist.
-function khaoslib_recipe:add_unlock(technology)
+function khaoslib_recipe:add_unlock(technology, options)
   if not khaoslib_technology.exists(technology) then error("No such technology: " .. technology, 2) end
 
   -- Load or get existing technology manipulator
@@ -1095,7 +1113,7 @@ function khaoslib_recipe:add_unlock(technology)
   end
 
   -- Add unlock recipe effect
-  tech_manipulator:add_unlock_recipe(self.recipe.name)
+  tech_manipulator:add_unlock_recipe(self.recipe.name, options)
 
   return self
 end

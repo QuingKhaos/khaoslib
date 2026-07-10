@@ -164,7 +164,10 @@ function khaoslib_list.find(list, compare)
   return results
 end
 
---- @class ListAddOptions
+--- @class ListAddIndexOptions
+--- @field index integer? If provided, inserts the item at the specified index instead of appending to the end of the list
+
+--- @class ListAddOptions : ListAddIndexOptions
 --- @field allow_duplicates boolean? If true, skips duplicate checking and adds the item directly (default: false)
 
 --- Adds an item to a list, with optional duplicate prevention.
@@ -194,21 +197,34 @@ end
 --- @param compare (fun(item: T): boolean)|string? A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
 --- @param options ListAddOptions? Options table with the following fields:
 ---   - `allow_duplicates` (boolean, default: false): If true, skips duplicate checking and adds the item directly
+---   - `index` (integer, optional): If provided, inserts the item at the specified index instead of appending to the end of the list
 --- @return T[] list The modified list (same reference as input, or new table if input was nil)
 function khaoslib_list.add(list, item, compare, options)
   list = list or {}
   options = options or {}
   local allow_duplicates = options.allow_duplicates or false
 
+  if options.index and (type(options.index) ~= "number" or options.index < 1 or options.index > #list + 1) then
+    error("options.index parameter: Expected a valid index between 1 and " .. (#list + 1) .. ", got " .. tostring(options.index), 2)
+  end
+
   if allow_duplicates then
     -- When allowing duplicates, just add the item directly (compare is ignored)
-    table.insert(list, util.table.deepcopy(item))
+    if options.index then
+      table.insert(list, options.index, util.table.deepcopy(item))
+    else
+      table.insert(list, util.table.deepcopy(item))
+    end
   else
     -- When preventing duplicates, we need a comparison function
     if not compare then error("compare parameter is required when allow_duplicates is false", 2) end
 
     if not khaoslib_list.has(list, compare) then
-      table.insert(list, util.table.deepcopy(item))
+      if options.index then
+        table.insert(list, options.index, util.table.deepcopy(item))
+      else
+        table.insert(list, util.table.deepcopy(item))
+      end
     end
   end
 

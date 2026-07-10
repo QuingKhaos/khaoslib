@@ -5,9 +5,10 @@ Date: ????
     - Add missing get_* functions to all modules to retrieve the first item matching a comparison function or string.
     - Use generic annotations for list module functions to improve type safety and clarity.
   Features:
-    - Add find_* functions to all modules to find all items matching a comparison function or string.
-    - Deprecate get/count_matching_* functions in favor of find_* functions for consistency across modules.
+    - Add find_*() functions to all modules to find all items matching a comparison function or string.
+    - Deprecate get/count_matching_*() functions in favor of find_*() functions for consistency across modules.
     - Add category handling to recipe module.
+    - Add options parameter to add_*() functions to allow specifying an index for insertion.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.1
 Date: 2026-07-10

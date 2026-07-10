@@ -253,7 +253,7 @@ end
 function khaoslib_recipe.get_icons(recipe)
   local resolved_recipe = resolve(recipe)
   if resolved_recipe.icon then
-    return util.table.deepcopy({icon = resolved_recipe.icon, icon_size = resolved_recipe.icon_size or nil})
+    return util.table.deepcopy({{icon = resolved_recipe.icon, icon_size = resolved_recipe.icon_size or nil}})
   elseif resolved_recipe.icons then
     return util.table.deepcopy(resolved_recipe.icons --[=[@as data.IconData[]]=])
   else

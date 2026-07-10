@@ -209,7 +209,7 @@ end
 function khaoslib_item.get_icons(item)
   local resolved_item = resolve(item)
   if resolved_item.icon then
-    return util.table.deepcopy({icon = resolved_item.icon, icon_size = resolved_item.icon_size or nil})
+    return util.table.deepcopy({{icon = resolved_item.icon, icon_size = resolved_item.icon_size or nil}})
   elseif resolved_item.icons then
     return util.table.deepcopy(resolved_item.icons --[=[@as data.IconData[]]=])
   else

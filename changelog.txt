@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.1
+Date: 2026-07-10
+  Bugfixes:
+    - Fix get_icons() functions of entity, item, recipe, and technology modules to return a list of icons instead of a single icon map.
+---------------------------------------------------------------------------------------------------
 Version: 1.6.0
 Date: 2026-07-09
   Features:

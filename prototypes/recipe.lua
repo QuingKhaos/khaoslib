@@ -184,12 +184,16 @@ function khaoslib_recipe:commit()
   return self
 end
 
---- Deletes the recipe currently being manipulated from the data stage instantly. Use with caution, as this works without a commit.
---- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
-function khaoslib_recipe:remove()
-  data.raw.recipe[self.recipe.name] = nil
+--- Deletes the recipe from the data stage instantly. Use with caution, as this works without a commit.
+--- @param recipe data.RecipeID|data.RecipePrototype The recipe.
+--- @return nil
+--- @overload fun(self: khaoslib.RecipeManipulator): khaoslib.RecipeManipulator
+function khaoslib_recipe.remove(recipe)
+  data.raw.recipe[resolve(recipe).name] = nil
 
-  return self
+  if type(recipe) == "table" and getmetatable(recipe) == khaoslib_recipe then
+    return recipe --[[@as khaoslib.RecipeManipulator]]
+  end
 end
 
 --- Merges another recipe manipulation object into this one, excluding the name field.

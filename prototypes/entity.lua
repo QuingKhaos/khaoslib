@@ -165,11 +165,22 @@ function khaoslib_entity:commit()
 end
 
 --- Deletes the entity from the data stage instantly. Use with caution, as this works without a commit.
---- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
-function khaoslib_entity:remove()
-  data.raw[self.entity.type][self.entity.name] = nil
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return nil
+--- @overload fun(self: khaoslib.EntityManipulator): khaoslib.EntityManipulator
+function khaoslib_entity.remove(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
 
-  return self
+  local resolved = resolve(_type, entity)
+  data.raw[resolved.type][resolved.name] = nil
+
+  if type(entity) == "table" and getmetatable(entity) == khaoslib_entity then
+    return entity --[[@as khaoslib.EntityManipulator]]
+  end
 end
 
 --- Merges another entity manipulation object into this one, excluding the name field.

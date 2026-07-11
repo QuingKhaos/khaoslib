@@ -173,11 +173,15 @@ function khaoslib_technology:commit()
 end
 
 --- Deletes the technology from the data stage instantly. Use with caution, as this works without a commit.
---- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
-function khaoslib_technology:remove()
-  data.raw.technology[self.technology.name] = nil
+--- @param technology data.TechnologyID|data.TechnologyPrototype The technology.
+--- @return nil
+--- @overload fun(self: khaoslib.TechnologyManipulator): khaoslib.TechnologyManipulator
+function khaoslib_technology.remove(technology)
+  data.raw.technology[resolve(technology).name] = nil
 
-  return self
+  if type(technology) == "table" and getmetatable(technology) == khaoslib_technology then
+    return technology --[[@as khaoslib.TechnologyManipulator]]
+  end
 end
 
 --- Merges another technology manipulation object into this one, excluding the name field.

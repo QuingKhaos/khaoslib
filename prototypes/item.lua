@@ -142,11 +142,15 @@ function khaoslib_item:commit()
 end
 
 --- Deletes the item from the data stage instantly. Use with caution, as this works without a commit.
---- @return khaoslib.ItemManipulator self The same item manipulation object for method chaining.
-function khaoslib_item:remove()
-  data.raw.item[self.item.name] = nil
+--- @param item data.ItemID|data.ItemPrototype The item.
+--- @return nil
+--- @overload fun(self: khaoslib.ItemManipulator): khaoslib.ItemManipulator
+function khaoslib_item.remove(item)
+  data.raw.item[resolve(item).name] = nil
 
-  return self
+  if type(item) == "table" and getmetatable(item) == khaoslib_item then
+    return item --[[@as khaoslib.ItemManipulator]]
+  end
 end
 
 --- Merges another item manipulation object into this one, excluding the name field.

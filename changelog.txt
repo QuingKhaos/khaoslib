@@ -3,6 +3,7 @@ Version: 1.11.0
 Date: 2026-07-11
   Features:
     - Add setting module with manipulation methods for working with Factorio mod settings.
+    - Convert remove() functions of item, recipe, and technology modules to static functions for direct access without needing to create an instance.
 ---------------------------------------------------------------------------------------------------
 Version: 1.10.0
 Date: 2026-07-11

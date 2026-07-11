@@ -18,8 +18,14 @@ local khaoslib_entity = {}
 --- @param _type? string The type of the entity. Will be ignored if a table is passed with a type field.
 --- @param entity data.EntityID|data.EntityPrototype The name of an existing entity or a new entity prototype table.
 --- @return khaoslib.EntityManipulator manipulator An entity manipulation object for the given entity.
+--- @overload fun(entity: data.EntityPrototype): khaoslib.EntityManipulator
 --- @throws If the entity name doesn't exist or if a table is passed with a name that already exists or without a valid name field.
 function khaoslib_entity:load(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
   local entity_type = type(entity)
   if entity_type ~= "string" and entity_type ~= "table" then error("entity parameter: Expected string or table , got " .. entity_type, 2) end
 
@@ -49,19 +55,58 @@ function khaoslib_entity:load(_type, entity)
   return obj
 end
 
---- Gets the raw data table of the entity.
---- @return data.EntityPrototype entity A deep copy of the entity data.
---- @nodiscard
-function khaoslib_entity:get()
-  return util.table.deepcopy(self.entity)
+--- @diagnostic disable: invisible
+
+--- Internal helper function to resole the entity from a string, entity prototype data or a entity manipulation object.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity to resolve.
+--- @return data.EntityPrototype resolved_entity The resolved entity prototype.
+--- @throws If the entity cannot be resolved.
+local resolve = function(_type, entity)
+  if type(entity) == "string" then
+    if not _type then error("Type parameter is required when entity is a string", 3) end
+    local result = data.raw[_type][entity]
+    if not result then
+      error("No such entity: " .. entity, 3)
+    end
+
+    return result --[[@as data.EntityPrototype]]
+  elseif type(entity) == "table" then
+    if getmetatable(entity) == khaoslib_entity and entity.entity then
+      return entity.entity
+    elseif entity.type and entity.name then
+      return entity --[[@as data.EntityPrototype]]
+    else
+      error("Invalid entity table: expected manipulator or prototype with type and name", 3)
+    end
+  else
+    error("Invalid entity parameter: expected entity type and name, prototype table, or entity manipulator", 3)
+  end
 end
 
---- @class khaoslib.SetEntityFields : data.EntityPrototype
+--- @diagnostic enable: invisible
+
+--- Gets the raw data table of the entity.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return data.EntityPrototype entity A deep copy of the entity data.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.EntityPrototype
+--- @nodiscard
+function khaoslib_entity.get(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  return util.table.deepcopy(resolve(_type, entity))
+end
+
+--- @class khaoslib_entity.EntityPrototype : data.EntityPrototype
 --- @field type? string
 --- @field name? string
 
 --- Merges the given fields into the entity.
---- @param fields khaoslib.SetEntityFields A table of fields to merge into the entity. See `data.EntityPrototype` for valid fields.
+--- @param fields khaoslib_entity.EntityPrototype A table of fields to merge into the entity. See `data.EntityPrototype` for valid fields.
 --- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
 --- @throws If fields is not a table or if it contains a name field.
 function khaoslib_entity:set(fields)
@@ -89,12 +134,20 @@ function khaoslib_entity:unset(field)
 end
 
 --- Creates a deep copy of the entity.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param new_name data.EntityID The name of the new entity. Must not already exist.
 --- @return khaoslib.EntityManipulator entity A new entity manipulation object with a deep copy of the entity.
 --- @throws If an entity with the new name already exists.
 --- @nodiscard
-function khaoslib_entity:copy(new_name)
-  local copy = util.table.deepcopy(self.entity)
+function khaoslib_entity.copy(_type, entity, new_name)
+  if type(_type) == "table" and type(entity) == "string" and new_name == nil then
+    new_name = entity
+    entity = _type
+    _type = nil
+  end
+
+  local copy = util.table.deepcopy(resolve(_type, entity))
   copy.name = new_name
 
   return khaoslib_entity:load(nil, copy)
@@ -105,7 +158,7 @@ end
 --- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
 function khaoslib_entity:commit()
   self:remove()
----@diagnostic disable-next-line: assign-type-mismatch
+  --- @diagnostic disable-next-line: assign-type-mismatch
   data:extend({self:get()})
 
   return self
@@ -136,7 +189,7 @@ function khaoslib_entity:__add(other)
   other_copy.type = nil
   other_copy.name = nil
 
-  return self:set(other_copy --[[@as khaoslib.SetEntityFields]])
+  return self:set(other_copy --[[@as khaoslib_entity.EntityPrototype]])
 end
 
 --- Compares two entity manipulation objects for equality based on the entity name.
@@ -183,24 +236,42 @@ local depopulate_icons = function(entity)
 end
 
 --- Returns a deepcopy of all icons for the given entity. If the entity has a single icon, it is returned as a single-element list.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return data.IconData[] icons A list of icons for the entity.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.IconData[]
 --- @nodiscard
-function khaoslib_entity:get_icons()
-  if self.entity.icons then
-    return util.table.deepcopy(self.entity.icons --[=[@as data.IconData[]]=])
-  elseif self.entity.icon then
-    return util.table.deepcopy({{icon = self.entity.icon, icon_size = self.entity.icon_size or nil}})
+function khaoslib_entity.get_icons(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  local resolved = resolve(_type, entity)
+  if resolved.icons then
+    return util.table.deepcopy(resolved.icons --[=[@as data.IconData[]]=])
+  elseif resolved.icon then
+    return util.table.deepcopy({{icon = resolved.icon, icon_size = resolved.icon_size or nil}})
   else
     return {}
   end
 end
 
 --- Returns a deep-copied list of all icons for the given entity that match the given criteria.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
 --- @return data.IconData[] icons A list of matching icons.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(icon: data.IconData): boolean)|string): data.IconData[]
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_entity:find_icons(compare)
+function khaoslib_entity.find_icons(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -208,9 +279,10 @@ function khaoslib_entity:find_icons(compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  populate_icons(self.entity)
-  local result = khaoslib_list.find(self.entity.icons, compare_fn)
-  depopulate_icons(self.entity)
+  local resolved = resolve(_type, entity)
+  populate_icons(resolved)
+  local result = khaoslib_list.find(resolved.icons, compare_fn)
+  depopulate_icons(resolved)
 
   return result
 end
@@ -231,19 +303,37 @@ function khaoslib_entity:set_icons(icons)
 end
 
 --- Returns the number of icons for the given entity.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return integer count The number of icons.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): integer
 --- @nodiscard
-function khaoslib_entity:count_icons()
-  return self.entity.icons ~= nil and #self.entity.icons or (self.entity.icon ~= nil and 1 or 0)
+function khaoslib_entity.count_icons(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  local resolved = resolve(_type, entity)
+  return resolved.icons ~= nil and #resolved.icons or (resolved.icon ~= nil and 1 or 0)
 end
 
 --- Checks if the entity has an icon matching the given criteria.
 --- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
 --- @return boolean has_icon True if the entity has the icon, false otherwise.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(icon: data.IconData): boolean)|string): boolean
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_entity:has_icon(compare)
+function khaoslib_entity.has_icon(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -251,20 +341,30 @@ function khaoslib_entity:has_icon(compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  populate_icons(self.entity)
-  local result = khaoslib_list.has(self.entity.icons, compare_fn)
-  depopulate_icons(self.entity)
+  local resolved = resolve(_type, entity)
+  populate_icons(resolved)
+  local result = khaoslib_list.has(resolved.icons, compare_fn)
+  depopulate_icons(resolved)
 
   return result
 end
 
 --- Gets the first icon (deep-copy) that matches the given criteria.
 --- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
 --- @return data.IconData? icon The first matching icon, or nil if no match is found.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(icon: data.IconData): boolean)|string): data.IconData?
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_entity:get_icon(compare)
+function khaoslib_entity.get_icon(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -272,9 +372,10 @@ function khaoslib_entity:get_icon(compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  populate_icons(self.entity)
-  local result = khaoslib_list.get(self.entity.icons, compare_fn)
-  depopulate_icons(self.entity)
+  local resolved = resolve(_type, entity)
+  populate_icons(resolved)
+  local result = khaoslib_list.get(resolved.icons, compare_fn)
+  depopulate_icons(resolved)
 
   return result
 end
@@ -360,17 +461,34 @@ function khaoslib_entity:clear_icons()
 end
 
 --- Checks if the entity has minable properties.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return boolean has_minable True if the entity has minable properties, false otherwise.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): boolean
 --- @nodiscard
-function khaoslib_entity:has_minable()
-  return self.entity.minable ~= nil
+function khaoslib_entity.has_minable(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  local resolved = resolve(_type, entity)
+  return resolved.minable ~= nil
 end
 
 --- Returns a deep copy of the minable properties of the entity, or an empty table if none are set.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return data.MinableProperties minable The minable properties of the entity, or an empty table if none are set.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.MinableProperties
 --- @nodiscard
-function khaoslib_entity:get_minable()
-  return util.table.deepcopy(self.entity.minable or {})
+function khaoslib_entity.get_minable(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  return util.table.deepcopy(resolve(_type, entity).minable or {})
 end
 
 --- Sets the minable property of the entity, overwritting all properties.
@@ -420,18 +538,26 @@ function khaoslib_entity:clear_minable()
 end
 
 --- Returns the emissions per minute for the entity's energy source, if applicable.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return table<data.AirbornePollutantID, double> emissions_per_minute A deep copy of the emissions per minute table
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): table<data.AirbornePollutantID, double>
 --- @throws If the entity does not have an energy_source field.
 --- @nodiscard
-function khaoslib_entity:get_emissions()
-  local entity = self.entity
-  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
-
-  if not entity.energy_source then
-    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+function khaoslib_entity.get_emissions(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
   end
 
-  return util.table.deepcopy(entity.energy_source.emissions_per_minute  or {})
+  local resolved = resolve(_type, entity)
+  --- @cast resolved data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not resolved.energy_source then
+    error("Entity type " .. resolved.type .. " does not have an energy_source field.", 2)
+  end
+
+  return util.table.deepcopy(resolved.energy_source.emissions_per_minute  or {})
 end
 
 --- Sets the emissions per minute for the entity's energy source, if applicable.
@@ -454,38 +580,55 @@ function khaoslib_entity:set_emissions(emissions)
 end
 
 --- Returns the number of emissions entries for the entity's energy source, if applicable.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @return integer count The number of emissions entries.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): integer
 --- @throws If the entity does not have an energy_source field.
-function khaoslib_entity:count_emissions()
-  local entity = self.entity
-  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
-
-  if not entity.energy_source then
-    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+function khaoslib_entity.count_emissions(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
   end
 
-  return #(entity.energy_source.emissions_per_minute or {})
+  local resolved = resolve(_type, entity)
+  --- @cast resolved data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not resolved.energy_source then
+    error("Entity type " .. resolved.type .. " does not have an energy_source field.", 2)
+  end
+
+  return #(resolved.energy_source.emissions_per_minute or {})
 end
 
 --- Checks if the entity has an emissions entry matching the given criteria.
 --- Supports both string matching (by pollutant name) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param compare (fun(emissions_per_minute: double): boolean)|data.AirbornePollutantID A comparison function or pollutant name to match.
 --- @return boolean has_emission True if the entity has the emissions entry, false otherwise.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(emissions_per_minute: double): boolean)|data.AirbornePollutantID): boolean
 --- @throws If compare is not a string or function.
-function khaoslib_entity:has_emission(compare)
-  local entity = self.entity
-  --- @cast entity data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+function khaoslib_entity.has_emission(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
 
-  if not entity.energy_source then
-    error("Entity type " .. entity.type .. " does not have an energy_source field.", 2)
+  local resolved = resolve(_type, entity)
+  --- @cast resolved data.AgriculturalTowerPrototype|data.BoilerPrototype|data.CraftingMachinePrototype|data.InserterPrototype|data.LabPrototype|data.MiningDrillPrototype|data.OffshorePumpPrototype|data.PumpPrototype|data.RadarPrototype|data.ReactorPrototype
+
+  if not resolved.energy_source then
+    error("Entity type " .. resolved.type .. " does not have an energy_source field.", 2)
   end
 
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   if type(compare) == "string" then
-    return entity.energy_source.emissions_per_minute and entity.energy_source.emissions_per_minute[compare] ~= nil or false
+    return resolved.energy_source.emissions_per_minute and resolved.energy_source.emissions_per_minute[compare] ~= nil or false
   else
-    return khaoslib_list.has(entity.energy_source.emissions_per_minute or {}, compare)
+    return khaoslib_list.has(resolved.energy_source.emissions_per_minute or {}, compare)
   end
 end
 

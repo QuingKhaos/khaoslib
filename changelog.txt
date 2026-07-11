@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.0
 Date: ????
+  Changes:
+    - Make entity module read-only functions static to allow for direct access without needing to create an instance.
   Features:
     - Add minable handling to entity module.
 ---------------------------------------------------------------------------------------------------

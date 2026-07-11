@@ -548,6 +548,198 @@ function khaoslib_entity:clear_minable()
   return self
 end
 
+--- Returns a deep copy of the surface conditions of the entity, or an empty table if none are set.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return data.SurfaceCondition[] surface_conditions A deep copy of the surface conditions table, or an empty table if none are set.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.SurfaceCondition[]
+--- @nodiscard
+function khaoslib_entity.get_surface_conditions(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  return util.table.deepcopy(resolve(_type, entity).surface_conditions or {})
+end
+
+--- Returns a deep-copied list of all surface conditions for the given entity that match the given criteria.
+--- Supports both string matching (by property `property`) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or property name to match.
+--- @return data.SurfaceCondition[] surface_conditions A list of matching surface conditions.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(surface_condition: data.SurfaceCondition): boolean)|string): data.SurfaceCondition[]
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.find_surface_conditions(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.find(resolve(_type, entity).surface_conditions or {}, compare_fn)
+end
+
+--- Sets the surface conditions for the entity.
+--- @param surface_conditions data.SurfaceCondition[] A list of surface conditions to set.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If the surface_conditions parameter is not a table.
+function khaoslib_entity:set_surface_conditions(surface_conditions)
+  if type(surface_conditions) ~= "table" then error("surface_conditions parameter: Expected table, got " .. type(surface_conditions), 2) end
+
+  self.entity.surface_conditions = util.table.deepcopy(surface_conditions)
+
+  return self
+end
+
+--- Returns the number of surface conditions for the given entity.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return integer count The number of surface conditions.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): integer
+--- @nodiscard
+function khaoslib_entity.count_surface_conditions(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  return #(resolve(_type, entity).surface_conditions or {})
+end
+
+--- Checks if the entity has a surface condition matching the given criteria.
+--- Supports both string matching (by property `property`) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or property name to match.
+--- @return boolean has_surface_condition True if the entity has the surface condition, false otherwise.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(surface_condition: data.SurfaceCondition): boolean)|string): boolean
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.has_surface_condition(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.has(resolve(_type, entity).surface_conditions or {}, compare_fn)
+end
+
+--- Gets the first surface condition (deep-copy) that matches the given criteria.
+--- Supports both string matching (by property `property`) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or property name to match.
+--- @return data.SurfaceCondition? surface_condition The first matching surface condition, or nil if no match is found.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(surface_condition: data.SurfaceCondition): boolean)|string): data.SurfaceCondition?
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.get_surface_condition(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.get(resolve(_type, entity).surface_conditions or {}, compare_fn)
+end
+
+--- Adds a surface condition to the entity, ignores duplicates.
+--- @param surface_condition data.SurfaceCondition The surface condition to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the surface condition at the specified index instead of appending to the end of the list.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If surface_condition is not a table or doesn't have required fields.
+function khaoslib_entity:add_surface_condition(surface_condition, options)
+  if type(surface_condition) ~= "table" then error("surface_condition parameter: Expected table, got " .. type(surface_condition), 2) end
+  if not surface_condition.property or type(surface_condition.property) ~= "string" then error("surface_condition parameter: Must have a property field of type string", 2) end
+
+  local compare_fn = function(existing)
+    return existing.property == surface_condition.property
+  end
+
+  self.entity.surface_conditions = khaoslib_list.add(self.entity.surface_conditions or {}, surface_condition, compare_fn, options --[[@as ListAddOptions]])
+
+  return self
+end
+
+--- Removes matching surface conditions from the entity.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or property name to match.
+--- @param options ListRemoveOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, removes all matching surface conditions instead of just the first.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_entity:remove_surface_condition(compare, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  self.entity.surface_conditions = khaoslib_list.remove(self.entity.surface_conditions or {}, compare_fn, options)
+
+  return self
+end
+
+--- Replaces matching surface conditions with a new surface condition.
+--- If no matching surface conditions are found, no changes are made.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or property name to match.
+--- @param replacement (fun(surface_condition: data.SurfaceCondition): data.SurfaceCondition)|data.SurfaceCondition The new surface condition to replace with.
+--- @param options ListReplaceOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, replaces all matching surface conditions instead of just the first.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If compare is not a string or function, or replacement is not a table or function, or if it's a table without a valid property field.
+function khaoslib_entity:replace_surface_condition(compare, replacement, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.property or type(replacement.property) ~= "string" then error("replacement parameter: Must have a property field of type string", 2) end
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  self.entity.surface_conditions = khaoslib_list.replace(self.entity.surface_conditions or {}, replacement, compare_fn, options)
+
+  return self
+end
+
+--- Removes all surface conditions from the entity.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+function khaoslib_entity:clear_surface_conditions()
+  self.entity.surface_conditions = {}
+
+  return self
+end
+
 --- Returns the emissions per minute for the entity's energy source, if applicable.
 --- @param _type? string The type of the entity. Required if entity is a string.
 --- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.

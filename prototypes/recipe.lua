@@ -1138,6 +1138,159 @@ function khaoslib_recipe:clear_results()
   return self
 end
 
+--- Returns a deep copy of the surface conditions for the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return data.SurfaceCondition[] surface_conditions A table of surface conditions for the recipe.
+--- @nodiscard
+function khaoslib_recipe.get_surface_conditions(recipe)
+  return util.table.deepcopy(resolve(recipe).surface_conditions or {})
+end
+
+--- Returns a deep-copied list of all surface conditions for the given recipe that match the given criteria.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(condition: data.SurfaceCondition): boolean)|string A comparison function or surface condition property to match.
+--- @return data.SurfaceCondition[] surface_conditions A list of matching surface conditions.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.find_surface_conditions(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.find(resolve(recipe).surface_conditions or {}, compare_fn)
+end
+
+--- Sets the complete list of surface conditions for the recipe, replacing any existing surface conditions.
+--- @param surface_conditions data.SurfaceCondition[] A list of surface conditions to set.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If surface_conditions is not a table.
+function khaoslib_recipe:set_surface_conditions(surface_conditions)
+  if type(surface_conditions) ~= "table" then error("surface_conditions parameter: Expected table, got " .. type(surface_conditions), 2) end
+
+  self.recipe.surface_conditions = util.table.deepcopy(surface_conditions)
+
+  return self
+end
+
+--- Returns the number of surface conditions for the given recipe.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return integer count The number of surface conditions.
+--- @nodiscard
+function khaoslib_recipe.count_surface_conditions(recipe)
+  return #(resolve(recipe).surface_conditions or {})
+end
+
+--- Checks if the recipe has a surface condition matching the given criteria.
+--- Supports both string matching (by surface condition property) and custom comparison functions.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(condition: data.SurfaceCondition): boolean)|string A comparison function or surface condition property to match.
+--- @return boolean has_condition True if a matching surface condition is found, false otherwise.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.has_surface_condition(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.has(resolve(recipe).surface_conditions, compare_fn)
+end
+
+--- Gets the first surface condition that matches the given criteria.
+--- Supports both string matching (by surface condition property) and custom comparison functions.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @param compare (fun(condition: data.SurfaceCondition): boolean)|string A comparison function or surface condition property to match.
+--- @return data.SurfaceCondition? surface_condition The first matching surface condition, or nil if no match is found.
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_recipe.get_surface_condition(recipe, compare)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  return khaoslib_list.get(resolve(recipe).surface_conditions or {}, compare_fn)
+end
+
+--- Adds a surface condition to the recipe if it doesn't already exist (prevents duplicates).
+--- @param surface_condition data.SurfaceCondition The surface condition to add.
+--- @param options ListAddIndexOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the surface condition at the specified index instead of appending to the end of the list.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If surface_condition is not a table or doesn't have required fields.
+function khaoslib_recipe:add_surface_condition(surface_condition, options)
+  if type(surface_condition) ~= "table" then error("surface_condition parameter: Expected table, got " .. type(surface_condition), 2) end
+  if not surface_condition.property or type(surface_condition.property) ~= "string" then error("surface_condition parameter: Must have a property field of type string", 2) end
+
+  local compare_fn = function(existing)
+    return existing.property == surface_condition.property
+  end
+
+  self.recipe.surface_conditions = khaoslib_list.add(self.recipe.surface_conditions, surface_condition, compare_fn, options --[[@as ListAddOptions?]])
+
+  return self
+end
+
+--- Removes matching surface conditions from the recipe.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or surface condition property to match.
+--- @param options ListRemoveOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, removes all matching surface conditions instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_recipe:remove_surface_condition(compare, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  self.recipe.surface_conditions = khaoslib_list.remove(self.recipe.surface_conditions, compare_fn, options)
+
+  return self
+end
+
+--- Replaces matching surface conditions with a new surface condition.
+--- If no matching surface conditions are found, no changes are made.
+--- @param compare (fun(surface_condition: data.SurfaceCondition): boolean)|string A comparison function or surface condition property to match.
+--- @param replacement (fun(surface_condition: data.SurfaceCondition): data.SurfaceCondition)|data.SurfaceCondition The new surface condition to replace with.
+--- @param options ListReplaceOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, replaces all matching surface conditions instead of just the first.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+--- @throws If compare is not a string or function, or replacement is not a table or function, or if it's a table without a valid property field.
+function khaoslib_recipe:replace_surface_condition(compare, replacement, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.property or type(replacement.property) ~= "string" then error("replacement parameter: Must have a property field of type string", 2) end
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.property == compare end
+  end
+
+  self.recipe.surface_conditions = khaoslib_list.replace(self.recipe.surface_conditions, replacement, compare_fn, options)
+
+  return self
+end
+
+--- Removes all surface conditions from the recipe.
+--- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
+function khaoslib_recipe:clear_surface_conditions()
+  self.recipe.surface_conditions = {}
+
+  return self
+end
+
 -- #endregion
 
 -- #region Technology unlock methods

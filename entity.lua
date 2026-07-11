@@ -359,6 +359,66 @@ function khaoslib_entity:clear_icons()
   return self
 end
 
+--- Checks if the entity has minable properties.
+--- @return boolean has_minable True if the entity has minable properties, false otherwise.
+--- @nodiscard
+function khaoslib_entity:has_minable()
+  return self.entity.minable ~= nil
+end
+
+--- Returns a deep copy of the minable properties of the entity, or an empty table if none are set.
+--- @return data.MinableProperties minable The minable properties of the entity, or an empty table if none are set.
+--- @nodiscard
+function khaoslib_entity:get_minable()
+  return util.table.deepcopy(self.entity.minable or {})
+end
+
+--- Sets the minable property of the entity, overwritting all properties.
+--- @param minable data.MinableProperties The minable properties to set.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If minable is not a table, or if minable.result is not a string, or if minable.results is not a table.
+function khaoslib_entity:set_minable(minable)
+  if type(minable) ~= "table" then error("minable parameter: Expected table, got " .. type(minable), 2) end
+  if minable.result and type(minable.result) ~= "string" then error("minable.result field: Expected string, got " .. type(minable.result), 2) end
+  if minable.results and type(minable.results) ~= "table" then error("minable.results field: Expected table, got " .. type(minable.results), 2) end
+
+  self.entity.minable = util.table.deepcopy(minable)
+
+  return self
+end
+
+--- @class khaoslib_entity.MinableProperties : data.MinableProperties
+--- @field mining_time? double
+
+--- Merges the given minable properties into the entity's existing minable properties.
+--- If the entity does not have minable properties, it will be created.
+--- @param minable khaoslib_entity.MinableProperties The minable properties to merge.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If minable is not a table, or if minable.result is not a string, or if minable.results is not a table, or if the entity does not have minable properties and the provided minable properties do not have a mining_time field.
+function khaoslib_entity:merge_minable(minable)
+  if type(minable) ~= "table" then error("minable parameter: Expected table, got " .. type(minable), 2) end
+  if minable.result and type(minable.result) ~= "string" then error("minable.result field: Expected string, got " .. type(minable.result), 2) end
+  if minable.results and type(minable.results) ~= "table" then error("minable.results field: Expected table, got " .. type(minable.results), 2) end
+
+  if not self.entity.minable then
+    if not minable.mining_time then
+      error("Cannot merge minable properties into an entity that does not have minable properties, and the provided minable properties do not have a mining_time field.", 2)
+    end
+  end
+
+  self.entity.minable = util.merge({self.entity.minable or {}, util.table.deepcopy(minable)})
+
+  return self
+end
+
+--- Clears the minable properties of the entity.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+function khaoslib_entity:clear_minable()
+  self.entity.minable = nil
+
+  return self
+end
+
 --- Returns the emissions per minute for the entity's energy source, if applicable.
 --- @return table<data.AirbornePollutantID, double> emissions_per_minute A deep copy of the emissions per minute table
 --- @throws If the entity does not have an energy_source field.

@@ -406,17 +406,20 @@ function khaoslib_recipe:clear_categories()
   return self
 end
 
+--- Checks if the recipe has a crafting machine tint defined.
+--- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
+--- @return boolean has_tint True if the recipe has a crafting machine tint, false otherwise.
+--- @nodiscard
+function khaoslib_recipe.has_crafting_machine_tint(recipe)
+  return resolve(recipe).crafting_machine_tint ~= nil
+end
+
 --- Get the crafting machine tint for the given recipe, if it has one.
 --- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
---- @return data.RecipeTints? tint The crafting machine tint, or nil if the recipe does not have one.
+--- @return data.RecipeTints tint The crafting machine tint, or an empty table if none is set.
 --- @nodiscard
 function khaoslib_recipe.get_crafting_machine_tint(recipe)
-  local resolved_recipe = resolve(recipe)
-  if resolved_recipe.crafting_machine_tint then
-    return util.table.deepcopy(resolved_recipe.crafting_machine_tint)
-  else
-    return nil
-  end
+  return util.table.deepcopy(resolve(recipe).crafting_machine_tint or {})
 end
 
 --- Sets the crafting machine tint for the recipe currently being manipulated.
@@ -442,14 +445,6 @@ function khaoslib_recipe:merge_crafting_machine_tint(tint)
   self.recipe.crafting_machine_tint = util.merge({existing_tint, util.table.deepcopy(tint)})
 
   return self
-end
-
---- Checks if the recipe has a crafting machine tint defined.
---- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
---- @return boolean has_tint True if the recipe has a crafting machine tint, false otherwise.
---- @nodiscard
-function khaoslib_recipe.has_crafting_machine_tint(recipe)
-  return resolve(recipe).crafting_machine_tint ~= nil
 end
 
 --- Clears the crafting machine tint for the recipe currently being manipulated.

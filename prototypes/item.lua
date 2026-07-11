@@ -88,6 +88,7 @@ end
 --- @class khaoslib.SetItemFields : data.ItemPrototype
 --- @field type? string
 --- @field name? string
+--- @field stack_size? data.ItemCountType
 
 --- Merges the given fields into the item.
 --- @param fields khaoslib.SetItemFields A table of fields to merge into the item. See `data.ItemPrototype` for valid fields.

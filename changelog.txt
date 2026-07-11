@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.10.0
+Date: 2026-07-11
+  Bugfixes:
+    - Make stack_size typehint optional in set() function of item module.
+  Features:
+    - Add unit handling to technology module.
+---------------------------------------------------------------------------------------------------
 Version: 1.9.0
 Date: 2026-07-11
   Changes:

@@ -429,6 +429,59 @@ function khaoslib_technology:clear_icons()
   return self
 end
 
+--- Returns true if the technology has a unit field with time, count or count_formula, and ingredients.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @return boolean has_unit True if the technology has a unit field with time, count or count_formula, and ingredients.
+--- @nodiscard
+function khaoslib_technology.has_unit(technology)
+  local unit = resolve(technology).unit
+  return unit ~= nil and unit.time ~= nil and (unit.count ~= nil or unit.count_formula ~= nil) and unit.ingredients ~= nil
+end
+
+--- Returns a deep copy of the unit field for the given technology.
+--- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
+--- @return data.TechnologyUnit unit A deep copy of the unit field, or an empty table if not set.
+--- @nodiscard
+function khaoslib_technology.get_unit(technology)
+  return util.table.deepcopy(resolve(technology).unit or {})
+end
+
+--- Sets the unit field for the technology currently being manipulated, replacing any existing unit field.
+--- @param unit data.TechnologyUnit A table representing the unit field to set. Must have time, count or count_formula, and ingredients.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If unit is not a table.
+function khaoslib_technology:set_unit(unit)
+  if type(unit) ~= "table" then error("unit parameter: Expected table, got " .. type(unit), 2) end
+
+  self.technology.unit = util.table.deepcopy(unit)
+
+  return self
+end
+
+--- @class khaoslib_technology.TechnologyUnit : data.TechnologyUnit
+--- @field time? double
+--- @field ingredients? data.ResearchIngredient[]
+
+--- Merges the given unit field into the technology currently being manipulated, combining existing and new fields.
+--- @param unit khaoslib_technology.TechnologyUnit A table representing the unit field to merge. Must have time, count or count_formula, and ingredients.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+--- @throws If unit is not a table.
+function khaoslib_technology:merge_unit(unit)
+  if type(unit) ~= "table" then error("unit parameter: Expected table, got " .. type(unit), 2) end
+
+  self.technology.unit = util.merge({self.technology.unit or {}, util.table.deepcopy(unit)})
+
+  return self
+end
+
+--- Removes the unit field from the technology currently being manipulated.
+--- @return khaoslib.TechnologyManipulator self The same technology manipulation object for method chaining.
+function khaoslib_technology:clear_unit()
+  self.technology.unit = nil
+
+  return self
+end
+
 --- Returns a list of all prerequisite technologies.
 --- @param technology data.TechnologyID|data.TechnologyPrototype|khaoslib.TechnologyManipulator The technology.
 --- @return data.TechnologyID[] prerequisites A list of prerequisite technology names.

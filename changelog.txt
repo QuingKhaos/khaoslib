@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.11.0
+Date: 2026-07-11
+  Features:
+    - Add setting module with manipulation methods for working with Factorio mod settings.
+---------------------------------------------------------------------------------------------------
 Version: 1.10.0
 Date: 2026-07-11
   Bugfixes:

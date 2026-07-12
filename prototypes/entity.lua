@@ -516,6 +516,230 @@ function khaoslib_entity:set_minable(minable)
   return self
 end
 
+--- Returns a deep copy of the minable results of the entity, or an empty table if none are set.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return data.ProductPrototype[] minable_results A deep copy of the minable results table, or an empty table if none are set.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.ProductPrototype[]
+--- @nodiscard
+function khaoslib_entity.get_minable_results(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity =_type
+    _type = nil
+  end
+
+  local minable = resolve(_type, entity).minable
+  if not minable then return {} end
+
+  if minable.results then
+    return util.table.deepcopy(minable.results --[=[@as data.ProductPrototype[]]=])
+  elseif minable.result then
+    return {{name = minable.result, amount = minable.count or 1}}
+  else
+    return {}
+  end
+end
+
+--- Returns a deep-copied list of all minable results for the given entity that match the given criteria.
+--- Supports both string matching (by product name) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @param compare (fun(product: data.ProductPrototype): boolean)|string A comparison function or product name to match.
+--- @return data.ProductPrototype? minable_result The first matching minable result, or nil if no match is found.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(product: data.ProductPrototype): boolean)|string): data.ProductPrototype?
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.find_minable_results(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local minable_results = khaoslib_entity.get_minable_results(_type, entity)
+  return khaoslib_list.find(minable_results, compare_fn)
+end
+
+--- Sets the minable results of the entity, overwriting any existing results.
+--- @param results data.ProductPrototype[] A list of minable results to set.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If results is not a table.
+function khaoslib_entity:set_minable_results(results)
+  if type(results) ~= "table" then error("results parameter: Expected table, got " .. type(results), 2) end
+
+  local minable = self.entity.minable or {}
+  minable.results = util.table.deepcopy(results)
+  minable.result = nil
+  minable.count = nil
+  self.entity.minable = minable
+
+  return self
+end
+
+--- Counts the number of minable results for the given entity.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return integer count The number of minable results.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): integer
+--- @nodiscard
+function khaoslib_entity.count_mineable_results(_type, entity)
+  if type(_type) == "table" and entity == nil then
+    entity = _type
+    _type = nil
+  end
+
+  local minable_results = khaoslib_entity.get_minable_results(_type, entity)
+  return #minable_results
+end
+
+--- Checks if the entity has a minable result matching the given criteria.
+--- Supports both string matching (by product name) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @param compare (fun(product: data.ProductPrototype): boolean)|string A comparison function or product name to match.
+--- @return boolean has_minable_result True if the entity has a matching minable result, false otherwise.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(product: data.ProductPrototype): boolean)|string): boolean
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.has_minable_result(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local minable_results = khaoslib_entity.get_minable_results(_type, entity)
+  return khaoslib_list.has(minable_results, compare_fn)
+end
+
+--- Gets the first minable result (deep-copy) that matches the given criteria.
+--- Supports both string matching (by product name) and custom comparison functions.
+--- @param _type? string The type of the entity. Required if entity is a string.
+--- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
+--- @return data.ProductPrototype? minable_result The first matching minable result, or nil if no match is found.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, compare: (fun(product: data.ProductPrototype): boolean)|string): data.ProductPrototype?
+--- @throws If compare is not a string or function.
+--- @nodiscard
+function khaoslib_entity.get_minable_result(_type, entity, compare)
+  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+    compare = entity
+    entity = _type
+    _type = nil
+  end
+
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local minable_results = khaoslib_entity.get_minable_results(_type, entity)
+  return khaoslib_list.get(minable_results, compare_fn)
+end
+
+--- Adds a minable result to the entity, allowing duplicates.
+--- @param result data.ProductPrototype The minable result to add.
+--- @param options ListAddOptions? Options table with fields:
+---   - `index` (integer, optional): If provided, inserts the result at the specified index instead of appending to the end of the list.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If result is not a table or doesn't have required fields.
+function khaoslib_entity:add_minable_result(result, options)
+  if type(result) ~= "table" then error("result parameter: Expected table, got " .. type(result), 2) end
+  if not result.name or type(result.name) ~= "string" then error("result parameter: Must have a name field of type string", 2) end
+
+  options = options or {}
+  --- @cast options ListAddOptions
+  options.allow_duplicates = true
+
+  local minable = self.entity.minable or {}
+  minable.results = khaoslib_list.add(self:get_minable_results(), result, nil, options)
+  minable.result = nil
+  minable.count = nil
+  self.entity.minable = minable
+
+  return self
+end
+
+--- Removes matching minable results from the entity.
+--- @param compare (fun(product: data.ProductPrototype): boolean)|string A comparison function or product name to match.
+--- @param options ListRemoveOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, removes all matching results instead of just the first.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If compare is not a string or function.
+function khaoslib_entity:remove_minable_result(compare, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local minable = self.entity.minable or {}
+  minable.results = khaoslib_list.remove(self:get_minable_results(), compare_fn, options)
+  minable.result = nil
+  minable.count = nil
+  self.entity.minable = minable
+
+  return self
+end
+
+--- Replaces matching minable results with a new result.
+--- If no matching results are found, no changes are made.
+--- @param compare (fun(product: data.ProductPrototype): boolean)|string A comparison function or product name to match.
+--- @param replacement (fun(product: data.ProductPrototype): data.ProductPrototype)|data.ProductPrototype The new minable result to replace with.
+--- @param options ListReplaceOptions? Options table with fields:
+---   - `all` (boolean, default: false): if true, replaces all matching results instead of just the first.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+--- @throws If compare is not a string or function, or replacement is not a table or function.
+function khaoslib_entity:replace_minable_result(compare, replacement, options)
+  if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
+
+  if type(replacement) ~= "table" and type(replacement) ~= "function" then error("replacement parameter: Expected table or function, got " .. type(replacement), 2) end
+  if type(replacement) == "table" then
+    if not replacement.name or type(replacement.name) ~= "string" then error("replacement parameter: Must have a name field of type string", 2) end
+  end
+
+  local compare_fn = compare
+  if type(compare) == "string" then
+    compare_fn = function(existing) return existing.name == compare end
+  end
+
+  local minable = self.entity.minable or {}
+  minable.results = khaoslib_list.replace(self:get_minable_results(), replacement, compare_fn, options)
+  minable.result = nil
+  minable.count = nil
+  self.entity.minable = minable
+
+  return self
+end
+
+--- Clears all minable results from the entity.
+--- @return khaoslib.EntityManipulator self The same entity manipulation object for method chaining.
+function khaoslib_entity:clear_minable_results()
+  local minable = self.entity.minable or {}
+  minable.results = nil
+  minable.result = nil
+  minable.count = nil
+  self.entity.minable = minable
+
+  return self
+end
+
 --- @class khaoslib_entity.MinableProperties : data.MinableProperties
 --- @field mining_time? double
 

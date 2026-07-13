@@ -307,7 +307,7 @@ function khaoslib_setting:force_default()
     error("Cannot force default value: setting does not have a default value", 2)
   end
 
-  khaoslib_setting:force(self.setting.default_value)
+  self:force(self.setting.default_value)
 
   return self
 end

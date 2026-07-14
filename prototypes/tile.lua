@@ -1,5 +1,4 @@
-local khaoslib_list = require("__khaoslib__.common.list")
-local util = require("util")
+local khaoslib_list = require("common.list")
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with tile manipulation objects.

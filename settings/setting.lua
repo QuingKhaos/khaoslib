@@ -4,10 +4,10 @@ local util = require("util")
 -- Core methods for creating and working with setting manipulation objects.
 
 --- @class khaoslib_setting.Setting
---- @field public type "bool-setting"|"int-setting"|"double-setting"|"string-setting"|"color-setting"
+--- @field public type string
 --- @field public name string
---- @field public localised_name? LocalisedString
---- @field public localised_description? LocalisedString
+--- @field public localised_name table?
+--- @field public localised_description table?
 --- @field public order string?
 --- @field public hidden boolean?
 --- @field public setting_type "startup"|"runtime-global"|"runtime-per-user"
@@ -81,6 +81,7 @@ function khaoslib_setting:load(setting)
     _setting = util.table.deepcopy(setting)
   end
 
+  --- @diagnostic disable-next-line: missing-fields
   --- @cast _setting khaoslib_setting.Settings
   --- @type khaoslib.SettingManipulator
   local obj = {setting = _setting}

@@ -534,7 +534,7 @@ function khaoslib_entity.get_minable_results(_type, entity)
   if minable.results then
     return util.table.deepcopy(minable.results --[=[@as data.ProductPrototype[]]=])
   elseif minable.result then
-    return {{name = minable.result, amount = minable.count or 1}}
+    return {{type = "item", name = minable.result, amount = minable.count or 1}}
   else
     return {}
   end

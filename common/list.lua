@@ -1,5 +1,3 @@
-local util = require("util")
-
 --- Reusable utilities for list manipulation to provide a consistent list manipulation behavior.
 ---
 --- This module provides common operations for working with lists/arrays in Factorio mods,
@@ -37,8 +35,8 @@ local khaoslib_list = {}
 
 --- Internal helper to normalize comparison logic for consistent behavior across all list operations.
 --- Converts string comparisons to functions, enabling uniform handling throughout the module.
---- @generic T : any
---- @param compare (fun(item: T): boolean)|string A comparison function or string to match
+--- @generic T
+--- @param compare string|fun(item: T): boolean A comparison function or string to match
 --- @return fun(item: T): boolean compare_fn The comparison function to use
 local function make_compare_fn(compare)
   if type(compare) == "string" then
@@ -51,9 +49,9 @@ local function make_compare_fn(compare)
 end
 
 --- Internal helper to validate and prepare common parameters for list operations.
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list parameter
---- @param compare (fun(item: T): boolean)|string The comparison parameter
+--- @param compare string|fun(item: T): boolean The comparison parameter
 --- @param empty_return_value any The value to return if list is nil
 --- @return T[] list The validated list (or empty table)
 --- @return (fun(item: T): boolean)? compare_fn The normalized comparison function (nil if list was nil)
@@ -67,10 +65,10 @@ local function validate_and_prepare(list, compare, empty_return_value)
 end
 
 --- Internal helper to perform list operations that can work on first match or all matches.
---- @generic T : any
+--- @generic T
 --- @param list T[] The validated list
 --- @param compare_fn fun(item: T): boolean The comparison function
---- @param operation_fn fun(i: number, item: T) Function that performs the operation on a single item (i, item) -> should_continue
+--- @param operation_fn fun(i: integer, item: T) Function that performs the operation on a single item (i, item) -> should_continue
 --- @param all boolean Whether to process all matches or just the first
 local function perform_list_operation(list, compare_fn, operation_fn, all)
   if all then
@@ -106,9 +104,9 @@ end
 --- local has_item = khaoslib_list.has({{name="iron"}, {name="copper"}}, function(item) return item.name == "iron" end) -- true
 --- ```
 ---
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to search in (can be nil, returns false)
---- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param compare string|fun(item: T): boolean A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @return boolean has_item True if the list contains a matching item, false otherwise´
 --- @nodiscard
 function khaoslib_list.has(list, compare)
@@ -125,9 +123,9 @@ function khaoslib_list.has(list, compare)
 end
 
 --- Retrieves the first item (deep-copy) from a list that matches a comparison function or string.
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to search in (can be nil, returns nil)
---- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param compare string|fun(item: T): boolean A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @return T? item The first matching item, or nil if no match is found
 --- @nodiscard
 function khaoslib_list.get(list, compare)
@@ -148,9 +146,9 @@ function khaoslib_list.get(list, compare)
 end
 
 --- Retrieve all items (deep-copy) from a list that match a comparison function or string.
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to search in (can be nil, returns empty table)
---- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param compare string|fun(item: T): boolean A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @return T[] list The modified list (same reference as input, or empty table if input was nil)
 function khaoslib_list.find(list, compare)
   local validated_list, compare_fn = validate_and_prepare(list, compare, {})
@@ -191,10 +189,10 @@ end
 --- khaoslib_list.add(recipes, {name = "copper-plate"}, function(r) return r.name == "copper-plate" end)
 --- ```
 ---
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to add to (will be created if nil)
 --- @param item T The item to add (will be deep copied)
---- @param compare (fun(item: T): boolean)|string? A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
+--- @param compare (string|fun(item: T): boolean)? A comparison function that receives an item and returns boolean, or a string for direct equality comparison. Required when allow_duplicates is false, ignored when allow_duplicates is true.
 --- @param options ListAddOptions? Options table with the following fields:
 ---   - `allow_duplicates` (boolean, default: false): If true, skips duplicate checking and adds the item directly
 ---   - `index` (integer, optional): If provided, inserts the item at the specified index instead of appending to the end of the list
@@ -253,9 +251,9 @@ end
 --- khaoslib_list.remove(recipes, function(r) return r.name == "iron-plate" end) -- Removes iron-plate recipe
 --- ```
 ---
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to remove from (returns empty table if nil)
---- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param compare string|fun(item: T): boolean A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListRemoveOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, removes all matching items instead of just the first
 --- @return T[] list The modified list (same reference as input, or empty table if input was nil)
@@ -292,14 +290,20 @@ end
 --- khaoslib_list.replace(my_list, "orange", "apple", {all = true}) -- Replaces all "apple", list becomes {"orange", "banana", "orange", "cherry"}
 ---
 --- -- Replace by function comparison
---- local recipes = {{name = "iron-plate", amount = 1}, {name = "copper-plate", amount = 1}}
---- khaoslib_list.replace(recipes, {name = "iron-plate", amount = 2}, function(r) return r.name == "iron-plate" end)
+--- local ingredients = {{name = "iron-plate", amount = 1}, {name = "copper-plate", amount = 1}}
+--- khaoslib_list.replace(ingredients, {name = "steel-plate", amount = 2}, function(r) return r.name == "iron-plate" end)
+---
+--- -- Replace by function comparison and replacement function
+--- khaoslib_list.replace(ingredients, function(r)
+---   r.amount = r.amount * 2
+---   return r
+--- end, function(r) return r.name == "iron-plate" end)
 --- ```
 ---
---- @generic T : any
+--- @generic T
 --- @param list T[]? The list to modify (returns empty table if nil)
---- @param new_item (fun(old_item: T): T)|T The new item to replace with (will be deep copied)
---- @param compare (fun(item: T): boolean)|string A comparison function that receives an item and returns boolean, or a string for direct equality comparison
+--- @param new_item T|fun(old_item: T): T The new item to replace with (will be deep copied)
+--- @param compare string|fun(item: T): boolean A comparison function that receives an item and returns boolean, or a string for direct equality comparison
 --- @param options ListReplaceOptions? Options table with the following fields:
 ---   - `all` (boolean, default: false): If true, replaces all matching items instead of just the first
 --- @return T[] list The modified list (same reference as input, or empty table if input was nil)

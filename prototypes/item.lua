@@ -1,5 +1,4 @@
-local khaoslib_list = require("__khaoslib__.common.list")
-local util = require("util")
+local khaoslib_list = require("common.list")
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with item manipulation objects.
@@ -33,12 +32,13 @@ function khaoslib_item:load(item)
 
   local _item = item --luacheck: ignore 311
   if item_type == "string" then
-    _item = util.table.deepcopy(data.raw.item[item])
+    _item = util.table.deepcopy(data.raw["item"][item])
   else
     _item = util.table.deepcopy(item)
     _item.type = "item"
   end
 
+  --- @diagnostic disable-next-line: missing-fields
   --- @cast _item data.ItemPrototype
   --- @type khaoslib.ItemManipulator
   local obj = {item = _item}
@@ -47,8 +47,6 @@ function khaoslib_item:load(item)
 
   return obj
 end
-
---- @diagnostic disable: invisible
 
 --- Internal helper function to resolve the item from a string, item prototype data or a item manipulation object.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item to resolve.
@@ -63,6 +61,7 @@ local resolve = function(item)
 
     return result
   elseif type(item) == "table" then
+    --- @diagnostic disable: access-invisible
     if getmetatable(item) == khaoslib_item and item.item then
       return item.item
     elseif item.type == "item" and item.name then
@@ -70,12 +69,11 @@ local resolve = function(item)
     else
       error("Invalid item table: expected manipulator or prototype with type='item' and name", 3)
     end
+    --- @diagnostic enable: access-invisible
   else
     error("Invalid item parameter: expected item name, prototype table, or item manipulator", 3)
   end
 end
-
---- @diagnostic enable: invisible
 
 --- Gets the raw data table of the item.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
@@ -143,10 +141,10 @@ end
 
 --- Deletes the item from the data stage instantly. Use with caution, as this works without a commit.
 --- @param item data.ItemID|data.ItemPrototype The item.
---- @return nil
+--- @return khaoslib.ItemManipulator? self The same item manipulation object if used on manipulation object or nil if used on a string or prototype.
 --- @overload fun(self: khaoslib.ItemManipulator): khaoslib.ItemManipulator
 function khaoslib_item.remove(item)
-  data.raw.item[resolve(item).name] = nil
+  data.raw["item"][resolve(item).name] = nil
 
   if type(item) == "table" and getmetatable(item) == khaoslib_item then
     return item --[[@as khaoslib.ItemManipulator]]
@@ -202,7 +200,7 @@ end
 --- If just a single item exists in the icons list, and it has no special properties, depopulate the icons list and set the icon and icon_size fields instead.
 --- @param item data.ItemPrototype The item reference to depopulate icons from.
 local depopulate_icons = function(item)
-  if #item.icons == 1 then
+  if item.icons and #item.icons == 1 then
     local icon = item.icons[1]
     if icon.tint == nil and icon.shift == nil and icon.scale == nil and icon.draw_background == nil and icon.floating == nil then
       item.icon = icon.icon
@@ -219,7 +217,7 @@ end
 function khaoslib_item.get_icons(item)
   local resolved_item = resolve(item)
   if resolved_item.icons then
-    return util.table.deepcopy(resolved_item.icons --[=[@as data.IconData[]]=])
+    return util.table.deepcopy(resolved_item.icons --[[@as data.IconData[] ]])
   elseif resolved_item.icon then
     return util.table.deepcopy({{icon = resolved_item.icon, icon_size = resolved_item.icon_size or nil}})
   else
@@ -382,10 +380,14 @@ function khaoslib_item:replace_icon(compare, replacement, options)
 
   local compare_fn = compare
   if type(compare) == "string" then
-    compare_fn = function(existing) return existing.icon == compare end
+    --- @param existing data.IconData
+    compare_fn = function(existing)
+      return existing.icon == compare
+    end
   end
 
   populate_icons(self.item)
+  --- @diagnostic disable-next-line: assign-type-mismatch, param-type-mismatch
   self.item.icons = khaoslib_list.replace(self.item.icons, replacement, compare_fn, options)
   depopulate_icons(self.item)
 
@@ -414,7 +416,7 @@ end
 function khaoslib_item.exists(name)
   if type(name) ~= "string" then error("name parameter: Expected string, got " .. type(name), 2) end
 
-  return data.raw.item[name] ~= nil
+  return data.raw["item"][name] ~= nil
 end
 
 --- Finds all items that match a custom compare function.
@@ -426,7 +428,7 @@ function khaoslib_item.find(compare_fn)
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
   local result = {}
-  for _, item in pairs(data.raw.item or {}) do
+  for _, item in pairs(data.raw["item"] or {}) do
     if compare_fn(item) then
       table.insert(result, item.name)
     end

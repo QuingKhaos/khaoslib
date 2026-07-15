@@ -1,5 +1,4 @@
-local khaoslib_list = require("__khaoslib__.common.list")
-local util = require("util")
+local khaoslib_list = require("common.list")
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with entity manipulation objects.
@@ -21,7 +20,7 @@ local khaoslib_entity = {}
 --- @overload fun(entity: data.EntityPrototype): khaoslib.EntityManipulator
 --- @throws If the entity name doesn't exist or if a table is passed with a name that already exists or without a valid name field.
 function khaoslib_entity:load(_type, entity)
-  if type(_type) == "table" and entity == nil then
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -46,6 +45,7 @@ function khaoslib_entity:load(_type, entity)
     _entity.type = _entity.type or _type
   end
 
+  --- @diagnostic disable-next-line: missing-fields
   --- @cast _entity data.EntityPrototype
   --- @type khaoslib.EntityManipulator
   local obj = {entity = _entity}
@@ -54,8 +54,6 @@ function khaoslib_entity:load(_type, entity)
 
   return obj
 end
-
---- @diagnostic disable: invisible
 
 --- Internal helper function to resole the entity from a string, entity prototype data or a entity manipulation object.
 --- @param _type? string The type of the entity. Required if entity is a string.
@@ -72,6 +70,7 @@ local resolve = function(_type, entity)
 
     return result --[[@as data.EntityPrototype]]
   elseif type(entity) == "table" then
+    --- @diagnostic disable: access-invisible
     if getmetatable(entity) == khaoslib_entity and entity.entity then
       return entity.entity
     elseif entity.type and entity.name then
@@ -79,12 +78,11 @@ local resolve = function(_type, entity)
     else
       error("Invalid entity table: expected manipulator or prototype with type and name", 3)
     end
+    --- @diagnostic enable: access-invisible
   else
     error("Invalid entity parameter: expected entity type and name, prototype table, or entity manipulator", 3)
   end
 end
-
---- @diagnostic enable: invisible
 
 --- Gets the raw data table of the entity.
 --- @param _type? string The type of the entity. Required if entity is a string.
@@ -93,7 +91,7 @@ end
 --- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.EntityPrototype
 --- @nodiscard
 function khaoslib_entity.get(_type, entity)
-  if type(_type) == "table" and entity == nil then
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -141,8 +139,11 @@ end
 --- @throws If an entity with the new name already exists.
 --- @nodiscard
 function khaoslib_entity.copy(_type, entity, new_name)
-  if type(_type) == "table" and type(entity) == "string" and new_name == nil then
+  if type(entity) == "string" then
     new_name = entity
+  end
+
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -167,10 +168,10 @@ end
 --- Deletes the entity from the data stage instantly. Use with caution, as this works without a commit.
 --- @param _type? string The type of the entity. Required if entity is a string.
 --- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
---- @return nil
+--- @return khaoslib.EntityManipulator? self The same entity manipulation object if used on manipulation object or nil if used on a string or prototype.
 --- @overload fun(self: khaoslib.EntityManipulator): khaoslib.EntityManipulator
 function khaoslib_entity.remove(_type, entity)
-  if type(_type) == "table" and entity == nil then
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -236,7 +237,7 @@ end
 --- If just a single entity exists in the icons list, and it has no special properties, depopulate the icons list and set the icon and icon_size fields instead.
 --- @param entity data.EntityPrototype The entity reference to depopulate icons from.
 local depopulate_icons = function(entity)
-  if #entity.icons == 1 then
+  if entity.icons and #entity.icons == 1 then
     local icon = entity.icons[1]
     if icon.tint == nil and icon.shift == nil and icon.scale == nil and icon.draw_background == nil and icon.floating == nil then
       entity.icon = icon.icon
@@ -253,14 +254,14 @@ end
 --- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): data.IconData[]
 --- @nodiscard
 function khaoslib_entity.get_icons(_type, entity)
-  if type(_type) == "table" and entity == nil then
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
 
   local resolved = resolve(_type, entity)
   if resolved.icons then
-    return util.table.deepcopy(resolved.icons --[=[@as data.IconData[]]=])
+    return util.table.deepcopy(resolved.icons --[[@as data.IconData[] ]])
   elseif resolved.icon then
     return util.table.deepcopy({{icon = resolved.icon, icon_size = resolved.icon_size or nil}})
   else
@@ -277,8 +278,11 @@ end
 --- @throws If compare is not a string or function.
 --- @nodiscard
 function khaoslib_entity.find_icons(_type, entity, compare)
-  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+  if type(entity) == "string" or type(entity) == "function" then
     compare = entity
+  end
+
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -290,7 +294,7 @@ function khaoslib_entity.find_icons(_type, entity, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved = resolve(_type, entity)
+  local resolved = resolve(_type, entity --[[@as data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator]])
   populate_icons(resolved)
   local result = khaoslib_list.find(resolved.icons, compare_fn)
   depopulate_icons(resolved)
@@ -320,7 +324,7 @@ end
 --- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator): integer
 --- @nodiscard
 function khaoslib_entity.count_icons(_type, entity)
-  if type(_type) == "table" and entity == nil then
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -339,8 +343,11 @@ end
 --- @throws If compare is not a string or function.
 --- @nodiscard
 function khaoslib_entity.has_icon(_type, entity, compare)
-  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+  if type(entity) == "string" or type(entity) == "function" then
     compare = entity
+  end
+
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -352,7 +359,7 @@ function khaoslib_entity.has_icon(_type, entity, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved = resolve(_type, entity)
+  local resolved = resolve(_type, entity --[[@as data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator]])
   populate_icons(resolved)
   local result = khaoslib_list.has(resolved.icons, compare_fn)
   depopulate_icons(resolved)
@@ -370,8 +377,11 @@ end
 --- @throws If compare is not a string or function.
 --- @nodiscard
 function khaoslib_entity.get_icon(_type, entity, compare)
-  if type(_type) == "table" and (type(entity) == "string" or type(entity) == "function") and compare == nil then
+  if type(entity) == "string" or type(entity) == "function" then
     compare = entity
+  end
+
+  if type(_type) == "table" then
     entity = _type
     _type = nil
   end
@@ -383,7 +393,7 @@ function khaoslib_entity.get_icon(_type, entity, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved = resolve(_type, entity)
+  local resolved = resolve(_type, entity --[[@as data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator]])
   populate_icons(resolved)
   local result = khaoslib_list.get(resolved.icons, compare_fn)
   depopulate_icons(resolved)

@@ -136,6 +136,7 @@ end
 --- @param entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator The entity.
 --- @param new_name data.EntityID The name of the new entity. Must not already exist.
 --- @return khaoslib.EntityManipulator entity A new entity manipulation object with a deep copy of the entity.
+--- @overload fun(entity: data.EntityPrototype|khaoslib.EntityManipulator, new_name: data.EntityID): khaoslib.EntityManipulator
 --- @throws If an entity with the new name already exists.
 --- @nodiscard
 function khaoslib_entity.copy(_type, entity, new_name)

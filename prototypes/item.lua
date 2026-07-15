@@ -1,4 +1,4 @@
-local khaoslib_list = require("common.list")
+local khaoslib_list = require("__khaoslib__.common.list")
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with item manipulation objects.
@@ -13,29 +13,43 @@ local khaoslib_list = require("common.list")
 --- @operator add(khaoslib.ItemManipulator): khaoslib.ItemManipulator
 local khaoslib_item = {}
 
+--- @alias khaoslib_item.Types "item"|"ammo"|"capsule"|"gun"|"item-with-entity-data"|"item-with-label"|"item-with-inventory"|"blueprint-book"|"item-with-tags"|"selection-tool"|"blueprint"|"copy-paste-tool"|"deconstruction-item"|"spidertron-remote"|"upgrade-item"|"module"|"rail-planner"|"space-platform-starter-pack"|"tool"|"armor"|"repair-tool"
+
 --- Loads a given item for manipulation or creates a new one if a table is passed.
+--- @param _type khaoslib_item.Types? The type of the item. Will be ignored if a table is passed with a type field. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype The name of an existing item or a new item prototype table.
 --- @return khaoslib.ItemManipulator manipulator An item manipulation object for the given item.
+--- @overload fun(item: data.ItemID|data.ItemPrototype): khaoslib.ItemManipulator
 --- @throws If the item name doesn't exist or if a table is passed with a name that already exists or without a valid name field.
-function khaoslib_item:load(item)
+function khaoslib_item:load(_type, item)
+  if item == nil then
+    item = _type --[[@as data.ItemID|data.ItemPrototype]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
   local item_type = type(item)
   if item_type ~= "string" and item_type ~= "table" then error("item parameter: Expected string or table , got " .. item_type, 2) end
 
   if item_type == "string" then
-    if not khaoslib_item.exists(item) then error("No such item: " .. item, 2) end
+    if type(_type) ~= "string" then error("_type parameter: Expected string, got " .. type(_type), 2) end
+    if not khaoslib_item.exists(_type, item) then error("No such item: " .. item, 2) end
   else -- item_type == "table"
     if item.type and type(item.type) ~= "string" then error("item table type field should be a string if set", 2) end
-    if item.type and item.type ~= "item" then error("item table type field should be 'item' if set", 2) end
     if not item.name or type(item.name) ~= "string" then error("item table must have a name field of type string", 2) end
-    if khaoslib_item.exists(item.name) then error("An item with the name " .. item.name .. " already exists", 2) end
+    if khaoslib_item.exists(item.type --[[@as khaoslib_item.Types]], item.name) then error("An item with the name " .. item.name .. " already exists", 2) end
   end
 
   local _item = item --luacheck: ignore 311
   if item_type == "string" then
-    _item = util.table.deepcopy(data.raw["item"][item])
+    _item = util.table.deepcopy(data.raw[_type][item])
   else
     _item = util.table.deepcopy(item)
-    _item.type = "item"
+    _item.type = _item.type or _type
   end
 
   --- @diagnostic disable-next-line: missing-fields
@@ -49,12 +63,14 @@ function khaoslib_item:load(item)
 end
 
 --- Internal helper function to resolve the item from a string, item prototype data or a item manipulation object.
+--- @param _type khaoslib_item.Types? The type of the item. Required if item is a string.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item to resolve.
 --- @return data.ItemPrototype resolved_item The resolved item prototype.
 --- @throws If the item cannot be resolved.
-local resolve = function(item)
+local resolve = function(_type, item)
   if type(item) == "string" then
-    local result = data.raw.item[item]
+    if not _type then error("Type parameter is required when item is a string", 3) end
+    local result = data.raw[_type][item]
     if not result then
       error("No such item: " .. item, 3)
     end
@@ -64,10 +80,10 @@ local resolve = function(item)
     --- @diagnostic disable: access-invisible
     if getmetatable(item) == khaoslib_item and item.item then
       return item.item
-    elseif item.type == "item" and item.name then
+    elseif item.type and item.name then
       return item --[[@as data.ItemPrototype]]
     else
-      error("Invalid item table: expected manipulator or prototype with type='item' and name", 3)
+      error("Invalid item table: expected manipulator or prototype with type and name", 3)
     end
     --- @diagnostic enable: access-invisible
   else
@@ -76,11 +92,23 @@ local resolve = function(item)
 end
 
 --- Gets the raw data table of the item.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @return data.ItemPrototype item A deep copy of the item data.
+--- @overload fun(item: data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator): data.ItemPrototype
 --- @nodiscard
-function khaoslib_item.get(item)
-  return util.table.deepcopy(resolve(item)) --[[@as data.ItemPrototype]]
+function khaoslib_item.get(_type, item)
+  if item == nil then
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  return util.table.deepcopy(resolve(_type, item)) --[[@as data.ItemPrototype]]
 end
 
 --- @class khaoslib.SetItemFields : data.ItemPrototype
@@ -117,13 +145,30 @@ function khaoslib_item:unset(field)
 end
 
 --- Creates a deep copy of the item.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @param new_name data.ItemID The name of the new item. Must not already exist.
 --- @return khaoslib.ItemManipulator item A new item manipulation object with a deep copy of the item.
+--- @overload fun(item: data.ItemID|data.ItemPrototype, new_name: data.ItemID): khaoslib.ItemManipulator
+--- @overload fun(self: khaoslib.ItemManipulator, new_name: data.ItemID): khaoslib.ItemManipulator
 --- @throws If an item with the new name already exists.
 --- @nodiscard
-function khaoslib_item.copy(item, new_name)
-  local copy = util.table.deepcopy(resolve(item))
+function khaoslib_item.copy(_type, item, new_name)
+  if new_name == nil then
+    new_name = item --[[@as data.ItemID]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast new_name data.ItemID
+
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  local copy = util.table.deepcopy(resolve(_type, item))
   copy.name = new_name
 
   return khaoslib_item:load(copy)
@@ -140,11 +185,23 @@ function khaoslib_item:commit()
 end
 
 --- Deletes the item from the data stage instantly. Use with caution, as this works without a commit.
---- @param item data.ItemID|data.ItemPrototype The item.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
+--- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @return khaoslib.ItemManipulator? self The same item manipulation object if used on manipulation object or nil if used on a string or prototype.
+--- @overload fun(item: data.ItemID|data.ItemPrototype)
 --- @overload fun(self: khaoslib.ItemManipulator): khaoslib.ItemManipulator
-function khaoslib_item.remove(item)
-  data.raw["item"][resolve(item).name] = nil
+function khaoslib_item.remove(_type, item)
+  if item == nil then
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  data.raw[_type][resolve(_type, item).name] = nil
 
   if type(item) == "table" and getmetatable(item) == khaoslib_item then
     return item --[[@as khaoslib.ItemManipulator]]
@@ -211,11 +268,24 @@ local depopulate_icons = function(item)
 end
 
 --- Returns a deepcopy of all icons for the given item. If the item has a single icon, it is returned as a single-element list.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @return data.IconData[] icons A list of icons for the item.
+--- @overload fun(item: data.ItemID|data.ItemPrototype): data.IconData[]
+--- @overload fun(self: khaoslib.ItemManipulator): data.IconData[]
 --- @nodiscard
-function khaoslib_item.get_icons(item)
-  local resolved_item = resolve(item)
+function khaoslib_item.get_icons(_type, item)
+  if item == nil then
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  local resolved_item = resolve(_type, item)
   if resolved_item.icons then
     return util.table.deepcopy(resolved_item.icons --[[@as data.IconData[] ]])
   elseif resolved_item.icon then
@@ -226,12 +296,27 @@ function khaoslib_item.get_icons(item)
 end
 
 --- Returns a deep-copied list of all icons for the given item that match the given criteria.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
---- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
+--- @param compare string|fun(icon: data.IconData): boolean A comparison function or icon filename to match.
 --- @return data.IconData[] icons A list of matching icons.
+--- @overload fun(item: data.ItemID|data.ItemPrototype, compare: (fun(icon: data.IconData): boolean)|string): data.IconData[]
+--- @overload fun(self: khaoslib.ItemManipulator, compare: (fun(icon: data.IconData): boolean)|string): data.IconData[]
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_item.find_icons(item, compare)
+function khaoslib_item.find_icons(_type, item, compare)
+  if compare == nil then
+    compare = item --[[@as string|fun(icon: data.IconData): boolean]]
+
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -239,7 +324,7 @@ function khaoslib_item.find_icons(item, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved_item = resolve(item)
+  local resolved_item = resolve(_type, item)
   populate_icons(resolved_item)
 
   local result = khaoslib_list.find(resolved_item.icons, compare_fn)
@@ -264,22 +349,50 @@ function khaoslib_item:set_icons(icons)
 end
 
 --- Returns the number of icons for the given item.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @return integer count The number of icons.
+--- @overload fun(item: data.ItemID|data.ItemPrototype): integer
+--- @overload fun(self: khaoslib.ItemManipulator): integer
 --- @nodiscard
-function khaoslib_item.count_icons(item)
-  local resolved_item = resolve(item)
+function khaoslib_item.count_icons(_type, item)
+  if item == nil then
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  local resolved_item = resolve(_type, item)
   return resolved_item.icon ~= nil and 1 or #(resolved_item.icons or {})
 end
 
 --- Checks if the item has an icon matching the given criteria.
 --- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
 --- @return boolean has_icon True if the item has the icon, false otherwise.
+--- @overload fun(item: data.ItemID|data.ItemPrototype, compare: (fun(icon: data.IconData): boolean)|string): boolean
+--- @overload fun(self: khaoslib.ItemManipulator, compare: (fun(icon: data.IconData): boolean)|string): boolean
 --- @throws If compare is not a string or function.
 --- @nodiscard
-function khaoslib_item.has_icon(item, compare)
+function khaoslib_item.has_icon(_type, item, compare)
+  if compare == nil then
+    compare = item --[[@as string|fun(icon: data.IconData): boolean]]
+
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
+
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -287,7 +400,7 @@ function khaoslib_item.has_icon(item, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved_item = resolve(item)
+  local resolved_item = resolve(_type, item)
   populate_icons(resolved_item)
 
   local result = khaoslib_list.has(resolved_item.icons, compare_fn)
@@ -298,12 +411,26 @@ end
 
 --- Gets the first icon (deep-copy) that matches the given criteria.
 --- Supports both string matching (by icon filename) and custom comparison functions.
+--- @param _type khaoslib_item.Types? The type of the item. Defaults to "item" if not provided.
 --- @param item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator The item.
 --- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
 --- @return data.IconData? icon The first matching icon, or nil if no match is found.
 --- @throws If compare is not a string or function.
+--- @overload fun(item: data.ItemID|data.ItemPrototype, compare: (fun(icon: data.IconData): boolean)|string): data.IconData?
+--- @overload fun(self: khaoslib.ItemManipulator, compare: (fun(icon: data.IconData): boolean)|string): data.IconData?
 --- @nodiscard
-function khaoslib_item.get_icon(item, compare)
+function khaoslib_item.get_icon(_type, item, compare)
+  if compare == nil then
+    compare = item --[[@as string|fun(icon: data.IconData): boolean]]
+
+    item = _type --[[@as data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast item data.ItemID|data.ItemPrototype|khaoslib.ItemManipulator
+
+    _type = nil
+  end
+
+  _type = _type or "item"
   if type(compare) ~= "string" and type(compare) ~= "function" then error("compare parameter: Expected string or function, got " .. type(compare), 2) end
 
   local compare_fn = compare
@@ -311,7 +438,7 @@ function khaoslib_item.get_icon(item, compare)
     compare_fn = function(existing) return existing.icon == compare end
   end
 
-  local resolved_item = resolve(item)
+  local resolved_item = resolve(_type, item)
   populate_icons(resolved_item)
 
   local result = khaoslib_list.get(resolved_item.icons, compare_fn)
@@ -364,8 +491,8 @@ end
 
 --- Replaces matching icons with a new icon.
 --- If no matching icons are found, no changes are made.
---- @param compare (fun(icon: data.IconData): boolean)|string A comparison function or icon filename to match.
---- @param replacement (fun(icon: data.IconData): data.IconData)|data.IconData The new icon data to replace with.
+--- @param compare string|fun(icon: data.IconData): boolean A comparison function or icon filename to match.
+--- @param replacement data.IconData|fun(icon: data.IconData): data.IconData The new icon data to replace with.
 --- @param options ListReplaceOptions? Options table with fields:
 ---   - `all` (boolean, default: false): if true, replaces all matching icons instead of just the first.
 --- @return khaoslib.ItemManipulator self The same item manipulation object for method chaining.
@@ -410,25 +537,46 @@ end
 -- Module-level utility functions for item discovery and analysis.
 
 --- Checks if an item exists in the data stage.
+--- @param _type khaoslib_item.Types? The type of the item to check. Defaults to "item" if not provided.
 --- @param name data.ItemID The item name to check.
 --- @return boolean exists True if the item exists, false otherwise.
+--- @overload fun(name: data.ItemID): boolean
+--- @throws If _type is not a string or if name is not a string.
 --- @nodiscard
-function khaoslib_item.exists(name)
+function khaoslib_item.exists(_type, name)
+  if name == nil then
+    name = _type --[[@as data.ItemID]]
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  if type(_type) ~= "string" then error("_type parameter: Expected string, got " .. type(_type), 2) end
   if type(name) ~= "string" then error("name parameter: Expected string, got " .. type(name), 2) end
 
-  return data.raw["item"][name] ~= nil
+  return data.raw[_type][name] ~= nil
 end
 
 --- Finds all items that match a custom compare function.
+--- @param _type khaoslib_item.Types? The type of the entities to search. Defaults to "item" if not provided.
 --- @param compare_fn fun(item: data.ItemPrototype): boolean A function that returns true for items to include.
 --- @return data.ItemID[] items A list of item names that match the compare function.
---- @throws If compare_fn is not a function.
+--- @overload fun(compare_fn: fun(item: data.ItemPrototype): boolean): data.ItemID[]
+--- @throws If _type is not a string or compare_fn is not a function.
 --- @nodiscard
-function khaoslib_item.find(compare_fn)
+function khaoslib_item.find(_type, compare_fn)
+  if compare_fn == nil then
+    compare_fn = _type --[[@as fun(item: data.ItemPrototype): boolean]]
+    _type = nil
+  end
+
+  _type = _type or "item"
+
+  if type(_type) ~= "string" then error("_type parameter: Expected string, got " .. type(_type), 2) end
   if type(compare_fn) ~= "function" then error("compare_fn parameter: Expected function, got " .. type(compare_fn), 2) end
 
   local result = {}
-  for _, item in pairs(data.raw["item"] or {}) do
+  for _, item in pairs(data.raw[_type] or {}) do
     if compare_fn(item) then
       table.insert(result, item.name)
     end

@@ -1,4 +1,4 @@
-local khaoslib_list = require("common.list")
+local khaoslib_list = require("__khaoslib__.common.list")
 
 --#region Basic manipulation methods
 -- A set of basic methods for creating and working with entity manipulation objects.
@@ -140,12 +140,15 @@ end
 --- @throws If an entity with the new name already exists.
 --- @nodiscard
 function khaoslib_entity.copy(_type, entity, new_name)
-  if type(entity) == "string" then
-    new_name = entity
-  end
+  if new_name == nil then
+    new_name = entity --[[@as data.EntityID]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast new_name data.EntityID
 
-  if type(_type) == "table" then
-    entity = _type
+    entity = _type --[[@as data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator]]
+    --- @diagnostic disable-next-line: cast-type-mismatch
+    --- @cast entity data.EntityID|data.EntityPrototype|khaoslib.EntityManipulator
+
     _type = nil
   end
 

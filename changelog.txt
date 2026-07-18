@@ -3,6 +3,7 @@ Version: 1.17.2
 Date: 2026-07-17
   Bugfixes:
     - Fix crash in settings module, if the settings type didn't exist previously.
+    - Correct type hint for color setting.
 ---------------------------------------------------------------------------------------------------
 Version: 1.17.1
 Date: 2026-07-16

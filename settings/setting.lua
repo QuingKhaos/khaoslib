@@ -40,8 +40,8 @@ local util = require("util")
 
 --- @class khaoslib_setting.ColorSetting : khaoslib_setting.Setting
 --- @field public type "color-setting"
---- @field public default_value Color
---- @field public forced_value Color?
+--- @field public default_value data.Color
+--- @field public forced_value data.Color?
 
 --- @alias khaoslib_setting.Settings khaoslib_setting.BoolSetting|khaoslib_setting.IntSetting|khaoslib_setting.DoubleSetting|khaoslib_setting.StringSetting|khaoslib_setting.ColorSetting
 

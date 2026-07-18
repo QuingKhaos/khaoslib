@@ -200,7 +200,9 @@ end
 --- Deletes the setting currently being manipulated from the settings stage instantly. Use with caution, as this works without a commit.
 --- @return khaoslib.SettingManipulator self The same setting manipulation object for method chaining.
 function khaoslib_setting:remove()
-  data.raw[self.setting.type][self.setting.name] = nil
+  if data.raw[self.setting.type] and data.raw[self.setting.type][self.setting.name] then
+    data.raw[self.setting.type][self.setting.name] = nil
+  end
 
   return self
 end

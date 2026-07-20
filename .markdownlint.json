@@ -26,11 +26,7 @@
   "hr-style": {
     "style": "---"
   },
-  "line-length": {
-    "code_blocks": false,
-    "line_length": 120,
-    "tables": false
-  },
+  "line-length": false,
   "link-image-style": {
     "collapsed": false,
     "shortcut": false,

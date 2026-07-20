@@ -1,0 +1,22 @@
+name: Release mod
+
+on:
+  push:
+    branches:
+      - "1.x"
+      - "2.x"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release mod
+    uses: QuingKhaos/khaosci/.github/workflows/release.yml@4cb8af2cfac9363aab1466a3cceed936976cf8b4
+    if: (github.event_name == 'push' && contains(github.event.head_commit.message, 'chore(release):')) || github.event_name == 'workflow_dispatch'
+    with:
+      mod-folder: .
+      skip-update-details: ${{ github.ref_name != '2.x' }}
+    secrets:
+      factorio-api-key: ${{ secrets.FACTORIO_API_KEY }}

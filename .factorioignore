@@ -1,0 +1,13 @@
+.dev/
+.github/
+.vscode/
+.editorconfig
+.emmyrc.json
+.factorioignore
+.gitattributes
+.gitignore
+.luarc.json
+.markdownlint.json
+mod_info.yml
+*.svg
+*.xcf

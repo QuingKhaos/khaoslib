@@ -232,27 +232,12 @@ end
 -- #region Recipe manipulation methods
 -- Specialized methods for manipulating recipes.
 
---- Merges the recipe's category and additional_categories into a single list of categories.
---- @param recipe data.RecipePrototype The recipe to merge categories for.
---- @return data.RecipeCategoryID[] categories A list of all categories the recipe belongs to.
---- @nodiscard
-local function merge_categories(recipe)
-  --- @type data.RecipeCategoryID[]
-  local categories = util.table.deepcopy(recipe.additional_categories or {})
-
-  if recipe.category then
-    table.insert(categories, 1, recipe.category)
-  end
-
-  return categories
-end
-
 --- Returns a list of all categories the recipe belongs to, including the main category and any additional categories.
 --- @param recipe data.RecipeID|data.RecipePrototype|khaoslib.RecipeManipulator The recipe.
 --- @return data.RecipeCategoryID[] categories A list of all categories the recipe belongs to.
 --- @nodiscard
 function khaoslib_recipe.get_categories(recipe)
-  return merge_categories(resolve(recipe))
+  return resolve(recipe).categories or {}
 end
 
 --- Finds categories in the recipe that match the given criteria.
@@ -268,7 +253,7 @@ function khaoslib_recipe.find_categories(recipe, compare)
     compare_fn = function(existing) return existing == compare end
   end
 
-  return khaoslib_list.find(merge_categories(resolve(recipe)), compare_fn)
+  return khaoslib_list.find(resolve(recipe).categories or {}, compare_fn)
 end
 
 --- Sets the recipe's category and additional_categories based on the given list of categories.
@@ -279,17 +264,7 @@ end
 function khaoslib_recipe:set_categories(categories)
   if type(categories) ~= "table" then error("categories parameter: Expected table, got " .. type(categories), 2) end
 
-  if #categories == 0 then
-    self.recipe.category = nil
-    self.recipe.additional_categories = nil
-  else
-    self.recipe.category = categories[1]
-    if #categories > 1 then
-      self.recipe.additional_categories = util.table.deepcopy({table.unpack(categories, 2)})
-    else
-      self.recipe.additional_categories = nil
-    end
-  end
+  self.recipe.categories = util.table.deepcopy(categories)
 
   return self
 end
@@ -299,7 +274,7 @@ end
 --- @return integer count The number of categories.
 --- @nodiscard
 function khaoslib_recipe.count_categories(recipe)
-  return #merge_categories(resolve(recipe))
+  return #(resolve(recipe).categories or {})
 end
 
 --- Checks if the recipe has a category matching the given criteria.
@@ -315,7 +290,7 @@ function khaoslib_recipe:has_category(recipe, compare)
     compare_fn = function(existing) return existing == compare end
   end
 
-  return khaoslib_list.has(merge_categories(resolve(recipe)), compare_fn)
+  return khaoslib_list.has(resolve(recipe).categories or {}, compare_fn)
 end
 
 --- Gets the first category that matches the given criteria.
@@ -333,7 +308,7 @@ function khaoslib_recipe.get_category(recipe, compare)
     compare_fn = function(existing) return existing == compare end
   end
 
-  return khaoslib_list.get(merge_categories(resolve(recipe)), compare_fn)
+  return khaoslib_list.get(resolve(recipe).categories or {}, compare_fn)
 end
 
 --- Adds a category to the recipe.
@@ -345,7 +320,7 @@ end
 function khaoslib_recipe:add_category(category, options)
   if type(category) ~= "string" then error("category parameter: Expected string, got " .. type(category), 2) end
 
-  local categories = merge_categories(self.recipe)
+  local categories = self.recipe.categories or {}
   local compare_fn = function(existing)
     return existing == category
   end
@@ -370,7 +345,7 @@ function khaoslib_recipe:remove_category(compare, options)
     compare_fn = function(existing) return existing == compare end
   end
 
-  local categories = merge_categories(self.recipe)
+  local categories = self.recipe.categories or {}
   categories = khaoslib_list.remove(categories, compare_fn, options)
   self:set_categories(categories)
 
@@ -394,18 +369,17 @@ function khaoslib_recipe:replace_category(compare, replacement, options)
     compare_fn = function(existing) return existing == compare end
   end
 
-  local categories = merge_categories(self.recipe)
+  local categories = self.recipe.categories or {}
   categories = khaoslib_list.replace(categories, replacement, compare_fn, options)
   self:set_categories(categories)
 
   return self
 end
 
---- Clears the recipe's category and additional_categories fields, effectively removing all categories from the recipe.
+--- Clears the recipe's categories field, effectively removing all categories from the recipe.
 --- @return khaoslib.RecipeManipulator self The same recipe manipulation object for method chaining.
 function khaoslib_recipe:clear_categories()
-  self.recipe.category = nil
-  self.recipe.additional_categories = nil
+  self.recipe.categories = nil
 
   return self
 end

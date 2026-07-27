@@ -39,6 +39,7 @@ function khaoslib_capsule:load(capsule)
     _capsule.type = "capsule"
   end
 
+  --- @diagnostic disable-next-line: missing-fields
   --- @cast _capsule data.CapsulePrototype
   --- @type khaoslib.CapsuleManipulator
   local obj = {capsule = _capsule}
@@ -47,8 +48,6 @@ function khaoslib_capsule:load(capsule)
 
   return obj
 end
-
---- @diagnostic disable: invisible
 
 --- Internal helper function to resolve the capsule from a string, capsule prototype data or a capsule manipulation object.
 --- @param capsule data.ItemID|data.CapsulePrototype|khaoslib.CapsuleManipulator The capsule to resolve.
@@ -63,6 +62,7 @@ local resolve = function(capsule)
 
     return result
   elseif type(capsule) == "table" then
+    --- @diagnostic disable: access-invisible
     if getmetatable(capsule) == khaoslib_capsule and capsule.capsule then
       return capsule.capsule
     elseif capsule.type == "capsule" and capsule.name then
@@ -70,12 +70,11 @@ local resolve = function(capsule)
     else
       error("Invalid capsule table: expected manipulator or prototype with type='capsule' and name", 3)
     end
+    --- @diagnostic enable: access-invisible
   else
     error("Invalid capsule parameter: expected capsule name, prototype table, or capsule manipulator", 3)
   end
 end
-
---- @diagnostic enable: invisible
 
 --- Gets the raw data table of the capsule.
 --- @param capsule data.ItemID|data.CapsulePrototype|khaoslib.CapsuleManipulator The capsule.
@@ -89,6 +88,7 @@ end
 --- @field type? string
 --- @field name? string
 --- @field stack_size? data.ItemCountType
+--- @field capsule_action? data.CapsuleAction
 
 --- Merges the given fields into the capsule.
 --- @param fields khaoslib_capsule.CapsulePrototype A table of fields to merge into the capsule. See `data.CapsulePrototype` for valid fields.
@@ -143,7 +143,8 @@ end
 
 --- Deletes the capsule from the data stage instantly. Use with caution, as this works without a commit.
 --- @param capsule data.ItemID|data.CapsulePrototype The capsule.
---- @return nil
+--- @return khaoslib.CapsuleManipulator? self The same capsule manipulation object if used on manipulation object or nil if used on a string or prototype.
+--- @overload fun(item: data.ItemID|data.CapsulePrototype)
 --- @overload fun(self: khaoslib.CapsuleManipulator): khaoslib.CapsuleManipulator
 function khaoslib_capsule.remove(capsule)
   data.raw.capsule[resolve(capsule).name] = nil
@@ -202,7 +203,7 @@ end
 --- If just a single capsule exists in the icons list, and it has no special properties, depopulate the icons list and set the icon and icon_size fields instead.
 --- @param capsule data.CapsulePrototype The capsule reference to depopulate icons from.
 local depopulate_icons = function(capsule)
-  if #capsule.icons == 1 then
+  if capsule.icons and #capsule.icons == 1 then
     local icon = capsule.icons[1]
     if icon.tint == nil and icon.shift == nil and icon.scale == nil and icon.draw_background == nil and icon.floating == nil then
       capsule.icon = icon.icon
@@ -219,7 +220,7 @@ end
 function khaoslib_capsule.get_icons(capsule)
   local resolved_capsule = resolve(capsule)
   if resolved_capsule.icons then
-    return util.table.deepcopy(resolved_capsule.icons --[=[@as data.IconData[]]=])
+    return util.table.deepcopy(resolved_capsule.icons --[[@as data.IconData[] ]])
   elseif resolved_capsule.icon then
     return util.table.deepcopy({{icon = resolved_capsule.icon, icon_size = resolved_capsule.icon_size or nil}})
   else
@@ -386,6 +387,7 @@ function khaoslib_capsule:replace_icon(compare, replacement, options)
   end
 
   populate_icons(self.capsule)
+  --- @diagnostic disable-next-line: assign-type-mismatch, param-type-mismatch
   self.capsule.icons = khaoslib_list.replace(self.capsule.icons, replacement, compare_fn, options)
   depopulate_icons(self.capsule)
 

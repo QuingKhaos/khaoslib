@@ -246,7 +246,7 @@ end
 -- Specialized methods for manipulating settings.
 
 --- Sets the default value of the setting currently being manipulated.
---- @param value boolean|integer|double|string|Color The default value to set for the setting. The type of the value must match the type of the setting.
+--- @param value boolean|integer|double|string|data.Color The default value to set for the setting. The type of the value must match the type of the setting.
 --- @return khaoslib.SettingManipulator self The same setting manipulation object for method chaining.
 --- @throws If the value type does not match the setting type.
 function khaoslib_setting:default(value)
@@ -270,7 +270,7 @@ function khaoslib_setting:default(value)
 end
 
 --- Forces the value of the setting currently being manipulated.
---- @param value boolean|integer|double|string|Color The value to force for the setting. The type of the value must match the type of the setting.
+--- @param value boolean|integer|double|string|data.Color The value to force for the setting. The type of the value must match the type of the setting.
 --- @return khaoslib.SettingManipulator self The same setting manipulation object for method chaining.
 --- @throws If the value type does not match the setting type.
 function khaoslib_setting:force(value)

@@ -3,6 +3,7 @@ Version: 1.18.0
 Date: ????
   Bugfixes:
     - Correct type hint for color settings.
+    - Improve type hints for capsule module.
 ---------------------------------------------------------------------------------------------------
 Version: 1.17.2
 Date: 2026-07-18

@@ -4,6 +4,14 @@ Date: ????
   Bugfixes:
     - Correct type hint for color settings.
     - Improve type hints for capsule module.
+  Features:
+    - Add ammo module.
+    - Add ammo type module.
+    - Add artillery projectile module.
+    - Add projectile module.
+    - Add trigger item module.
+    - Add trigger delivery item module.
+    - Add trigger effect item module.
 ---------------------------------------------------------------------------------------------------
 Version: 1.17.2
 Date: 2026-07-18

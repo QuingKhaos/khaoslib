@@ -4,6 +4,8 @@ Date: ????
   Bugfixes:
     - Correct type hint for color settings.
     - Improve type hints for capsule module.
+  Changes:
+    - It is now possible to unset nested fields, separated by a dot.
   Features:
     - Add ammo module.
     - Add ammo type module.
@@ -30,6 +32,8 @@ Date: ????
   Bugfixes:
     - Correct type hint for color settings.
     - Improve type hints for capsule module.
+  Changes:
+    - It is now possible to unset nested fields, separated by a dot.
   Features:
     - Add ammo module.
     - Add ammo type module.

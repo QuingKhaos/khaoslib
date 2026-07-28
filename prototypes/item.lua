@@ -139,7 +139,29 @@ function khaoslib_item:unset(field)
   if field == "type" then error("Cannot unset the type of an item.", 2) end
   if field == "name" then error("Cannot unset the name of an item.", 2) end
 
-  self.item[field] = nil
+  --- @diagnostic disable-next-line: undefined-field
+  local fields_iter = field:gmatch("[^%.]+")
+  local current = self.item
+  local idx = 0
+  local field_part = fields_iter()
+  while field_part do
+    idx = idx + 1
+    if current[field_part] == nil then
+      return self -- Field doesn't exist, nothing to unset
+    end
+
+    local next_field_part = fields_iter()
+    if not next_field_part then
+      current[field_part] = nil
+    else
+      if type(current[field_part]) ~= "table" then
+        error("Cannot unset field '" .. field .. "' because '" .. tostring(current[field_part]) .. "' is not a table.", 2)
+      end
+    end
+
+    current = current[field_part]
+    field_part = next_field_part
+  end
 
   return self
 end
